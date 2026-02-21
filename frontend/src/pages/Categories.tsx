@@ -2,34 +2,35 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import CategoryCard from '@/components/CategoryCard';
 import { api, Category } from '@/lib/api';
+import { useQuery } from '@tanstack/react-query';
 
 const Categories = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const { data, isLoading, error: queryError } = useQuery({
+    queryKey: ['categoriesPublic'],
+    queryFn: api.categoriesPublic,
+    staleTime: 1000 * 60 * 5,
+  });
+
   useEffect(() => {
-    let mounted = true;
-    setLoading(true);
-    setError(null);
-    api
-      .categoriesPublic()
-      .then((data) => {
-        if (!mounted) return;
-        setCategories(data.categories);
-      })
-      .catch((err) => {
-        if (!mounted) return;
-        setError(err instanceof Error ? err.message : 'Failed to load categories');
-      })
-      .finally(() => {
-        if (!mounted) return;
-        setLoading(false);
-      });
-    return () => {
-      mounted = false;
-    };
-  }, []);
+    if (!data) return;
+    setCategories(data.categories as Category[]);
+  }, [data]);
+
+  useEffect(() => {
+    setLoading(isLoading);
+  }, [isLoading]);
+
+  useEffect(() => {
+    if (!queryError) {
+      setError(null);
+      return;
+    }
+    setError(queryError instanceof Error ? queryError.message : 'Failed to load categories');
+  }, [queryError]);
 
   return (
     <div className="pt-24 pb-24 md:pb-8">

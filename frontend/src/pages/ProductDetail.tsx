@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Star, Minus, Plus, ShoppingBag, ArrowLeft, ChevronRight } from 'lucide-react';
@@ -6,52 +6,50 @@ import { useCart } from '@/hooks/useCart';
 import ProductCard from '@/components/ProductCard';
 import { api, Product } from '@/lib/api';
 import { formatPrice } from '@/lib/utils';
+import { useQuery } from '@tanstack/react-query';
 
 const ProductDetail = () => {
   const { id } = useParams();
-  const [product, setProduct] = useState<Product | null>(null);
-  const [similar, setSimilar] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const { addToCart } = useCart();
   const [qty, setQty] = useState(1);
   const [activeTab, setActiveTab] = useState('description');
 
-  useEffect(() => {
-    if (!id) return;
-    let mounted = true;
-    setLoading(true);
-    setError(null);
-    Promise.all([api.productPublic(id), api.productsPublic()])
-      .then(([single, list]) => {
-        if (!mounted) return;
-        setProduct(single.product);
-        const currentCategoryId =
-          single.product.category && typeof single.product.category !== 'string'
-            ? single.product.category._id
-            : null;
-        const sims = list.products.filter(
-          (p: Product) =>
-            p._id !== single.product._id &&
-            currentCategoryId &&
-            p.category &&
-            typeof p.category !== 'string' &&
-            p.category._id === currentCategoryId,
-        );
-        setSimilar(sims.slice(0, 4));
-      })
-      .catch((err) => {
-        if (!mounted) return;
-        setError(err instanceof Error ? err.message : 'Failed to load product');
-      })
-      .finally(() => {
-        if (!mounted) return;
-        setLoading(false);
-      });
-    return () => {
-      mounted = false;
-    };
-  }, [id]);
+  const productQuery = useQuery({
+    queryKey: ['productPublic', id],
+    queryFn: () => api.productPublic(id as string),
+    enabled: !!id,
+  });
+
+  const allProductsQuery = useQuery({
+    queryKey: ['productsPublic'],
+    queryFn: api.productsPublic,
+    staleTime: 1000 * 60,
+  });
+
+  const productData = productQuery.data?.product as Product | undefined;
+  const productsData = allProductsQuery.data?.products as Product[] | undefined;
+
+  const product = productData || null;
+
+  const similar = useMemo(() => {
+    if (!product || !productsData || !productsData.length) return [] as Product[];
+    const currentCategoryId =
+      product.category && typeof product.category !== 'string' ? product.category._id : null;
+    if (!currentCategoryId) return [] as Product[];
+    const sims = productsData.filter(
+      (p: Product) =>
+        p._id !== product._id &&
+        p.category &&
+        typeof p.category !== 'string' &&
+        p.category._id === currentCategoryId,
+    );
+    return sims.slice(0, 4);
+  }, [product, productsData]);
+
+  const loading = productQuery.isLoading || allProductsQuery.isLoading;
+  const error =
+    (productQuery.error instanceof Error ? productQuery.error.message : null) ||
+    (allProductsQuery.error instanceof Error ? allProductsQuery.error.message : null);
 
   if (loading) {
     return (

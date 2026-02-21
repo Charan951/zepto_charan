@@ -2,37 +2,34 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { api, type Order } from "@/lib/api";
 import { formatPrice } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
 
 const MyOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const { data, isLoading, error: queryError } = useQuery({
+    queryKey: ["myOrders"],
+    queryFn: api.myOrders,
+  });
+
   useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      setLoading(true);
+    if (!data) return;
+    setOrders((data.orders || []) as Order[]);
+  }, [data]);
+
+  useEffect(() => {
+    setLoading(isLoading);
+  }, [isLoading]);
+
+  useEffect(() => {
+    if (!queryError) {
       setError(null);
-      try {
-        const data = await api.myOrders();
-        if (!cancelled) {
-          setOrders(data.orders || []);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Failed to load orders");
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
+      return;
     }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    setError(queryError instanceof Error ? queryError.message : "Failed to load orders");
+  }, [queryError]);
 
   return (
     <div className="pt-24 pb-24 md:pb-12">

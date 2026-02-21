@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,24 +11,31 @@ import Footer from "@/components/Footer";
 import MobileNav from "@/components/MobileNav";
 import CartDrawer from "@/components/CartDrawer";
 import FloatingCartButton from "@/components/FloatingCartButton";
-import Index from "./pages/Index";
-import Products from "./pages/Products";
-import Categories from "./pages/Categories";
-import ProductDetail from "./pages/ProductDetail";
-import About from "./pages/About";
-import Contact from "./pages/Contact";
-import FAQ from "./pages/FAQ";
-import Blog from "./pages/Blog";
-import NotFound from "./pages/NotFound";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import AdminDashboard from "./pages/AdminDashboard";
+const Index = lazy(() => import("./pages/Index"));
+const Products = lazy(() => import("./pages/Products"));
+const Categories = lazy(() => import("./pages/Categories"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+const About = lazy(() => import("./pages/About"));
+const Contact = lazy(() => import("./pages/Contact"));
+const FAQ = lazy(() => import("./pages/FAQ"));
+const Blog = lazy(() => import("./pages/Blog"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 import { ProtectedRoute } from "./routes/ProtectedRoute";
-import Checkout from "./pages/Checkout";
-import MyOrders from "./pages/MyOrders";
-import Profile from "./pages/Profile";
+const Checkout = lazy(() => import("./pages/Checkout"));
+const MyOrders = lazy(() => import("./pages/MyOrders"));
+const Profile = lazy(() => import("./pages/Profile"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 const AppRoutes = () => {
   const location = useLocation();
@@ -42,51 +49,53 @@ const AppRoutes = () => {
     <>
       {!isAdminRoute && <Navbar />}
       <main className="min-h-screen">
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/products" element={<Products />} />
-          <Route path="/categories" element={<Categories />} />
-          <Route path="/product/:id" element={<ProductDetail />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/faq" element={<FAQ />} />
-          <Route path="/blog" element={<Blog />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route
-            path="/orders"
-            element={
-              <ProtectedRoute>
-                <MyOrders />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/checkout"
-            element={
-              <ProtectedRoute>
-                <Checkout />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute role="admin">
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <Suspense fallback={<div className="pt-24 p-8 text-center text-sm text-muted-foreground">Loading...</div>}>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/products" element={<Products />} />
+            <Route path="/categories" element={<Categories />} />
+            <Route path="/product/:id" element={<ProductDetail />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/faq" element={<FAQ />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route
+              path="/orders"
+              element={
+                <ProtectedRoute>
+                  <MyOrders />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/checkout"
+              element={
+                <ProtectedRoute>
+                  <Checkout />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute role="admin">
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
       </main>
       {!isAdminRoute && (
         <>

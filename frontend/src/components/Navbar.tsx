@@ -77,11 +77,6 @@ const Navbar = () => {
 
         {/* Right side */}
         <div className="flex items-center gap-2">
-          <div className="hidden sm:flex items-center gap-1.5 text-sm text-muted-foreground bg-muted/50 rounded-xl px-3 py-1.5">
-            <MapPin size={14} className="text-primary" />
-            <span>New York, NY</span>
-          </div>
-
           <div className="hidden md:flex items-center gap-2">
             {!user && (
               <>

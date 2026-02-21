@@ -25,12 +25,26 @@ cloudinary.config({
 const app = express();
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/quickglow";
-const CORS_ORIGINS = (process.env.CORS_ORIGINS || "http://localhost:8080")
-  .split(",")
-  .map((origin) => origin.trim())
-  .filter(Boolean);
+const NODE_ENV = process.env.NODE_ENV || "development";
 
-app.use(cors({ origin: CORS_ORIGINS, credentials: true }));
+let corsOptions;
+if (NODE_ENV === "production") {
+  const origins = (process.env.CORS_ORIGINS || "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+  corsOptions = {
+    origin: origins.length > 0 ? origins : true,
+    credentials: true,
+  };
+} else {
+  corsOptions = {
+    origin: true,
+    credentials: true,
+  };
+}
+
+app.use(cors(corsOptions));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 

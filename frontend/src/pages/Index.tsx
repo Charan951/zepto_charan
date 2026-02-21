@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Search, MapPin, Zap, Clock, Truck, Shield, ChevronRight, ArrowRight, Star, Download } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -6,6 +5,7 @@ import ProductCard from '@/components/ProductCard';
 import CategoryCard from '@/components/CategoryCard';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
 import { api, Product, Category } from '@/lib/api';
+import { useQuery } from '@tanstack/react-query';
 
 const SectionHeader = ({ children }: { children: React.ReactNode }) => {
   const { ref, isInView } = useScrollReveal();
@@ -23,7 +23,7 @@ const HeroSection = () => (
       className="absolute bottom-10 right-10 w-96 h-96 bg-accent/5 rounded-full blur-3xl animate-float"
       style={{ animationDelay: "1.5s" }}
     />
-    <div className="absolute right-4 md:right-20 top-28 md:top-32 w-36 h-36 sm:w-40 sm:h-40 md:w-60 md:h-60 rounded-[32px] overflow-hidden shadow-elevated bg-white/80">
+    <div className="hidden sm:block absolute right-4 md:right-20 top-28 md:top-32 w-36 h-36 sm:w-40 sm:h-40 md:w-60 md:h-60 rounded-[32px] overflow-hidden shadow-elevated bg-white/80">
       <img src="/icon.png" alt="Quick Glow Grocer" className="w-full h-full object-cover" />
     </div>
 
@@ -42,22 +42,22 @@ const HeroSection = () => (
           </p>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.5 }} className="flex flex-col sm:flex-row gap-3 mb-8">
-          <div className="flex-1 relative">
-            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input type="text" placeholder="Search for groceries..." className="w-full pl-11 pr-4 py-3.5 rounded-2xl glass-card-solid border-none outline-none text-sm placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/20 transition-shadow" />
-          </div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+          className="mb-8"
+        >
           <Link to="/products">
-            <motion.button whileTap={{ scale: 0.95 }} className="gradient-primary text-primary-foreground px-8 py-3.5 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 shadow-sm whitespace-nowrap w-full sm:w-auto">
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              className="gradient-primary text-primary-foreground px-8 py-3.5 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 shadow-sm w-full sm:w-auto"
+            >
               Shop Now <ArrowRight size={16} />
             </motion.button>
           </Link>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="flex items-center gap-2 text-sm text-muted-foreground">
-          <MapPin size={14} className="text-primary" />
-          <span>Delivering to <strong className="text-foreground">New York, NY</strong></span>
-        </motion.div>
       </div>
     </div>
   </section>
@@ -201,24 +201,26 @@ const AppDownloadSection = () => {
 };
 
 const Index = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const {
+    data: productsData,
+    isLoading: loadingProducts,
+  } = useQuery({
+    queryKey: ['productsPublic'],
+    queryFn: api.productsPublic,
+    staleTime: 1000 * 60,
+  });
 
-  useEffect(() => {
-    let mounted = true;
-    Promise.all([api.productsPublic(), api.categoriesPublic()])
-      .then(([prodData, catData]) => {
-        if (!mounted) return;
-        setProducts(prodData.products);
-        setCategories(catData.categories);
-      })
-      .catch(() => {
-        if (!mounted) return;
-      });
-    return () => {
-      mounted = false;
-    };
-  }, []);
+  const {
+    data: categoriesData,
+    isLoading: loadingCategories,
+  } = useQuery({
+    queryKey: ['categoriesPublic'],
+    queryFn: api.categoriesPublic,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const products = (productsData?.products as Product[]) || [];
+  const categories = (categoriesData?.categories as Category[]) || [];
 
   return (
     <div className="pb-16 md:pb-0">
