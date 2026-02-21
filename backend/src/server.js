@@ -34,6 +34,7 @@ const allowedOrigins = (process.env.FRONTEND_URLS || "")
 
 const isDev = NODE_ENV !== "production";
 const devOriginPrefixes = ["http://localhost:", "http://127.0.0.1:", "http://0.0.0.0:"];
+const allowLocalhostInProd = process.env.ALLOW_LOCALHOST_ORIGINS_IN_PROD === "true";
 
 const corsOptions = {
   origin(origin, callback) {
@@ -42,8 +43,11 @@ const corsOptions = {
     const allowedByEnv = allowedOrigins.includes("*") || allowedOrigins.includes(normalizedOrigin);
     const allowedByDevDefault =
       isDev && devOriginPrefixes.some((prefix) => normalizedOrigin.startsWith(prefix));
+    const allowedByLocalhostProd =
+      allowLocalhostInProd &&
+      devOriginPrefixes.some((prefix) => normalizedOrigin.startsWith(prefix));
 
-    if (allowedByEnv || allowedByDevDefault) {
+    if (allowedByEnv || allowedByDevDefault || allowedByLocalhostProd) {
       callback(null, true);
     } else {
       callback(new Error("Not allowed by CORS"));
