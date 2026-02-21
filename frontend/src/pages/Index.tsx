@@ -17,13 +17,13 @@ const SectionHeader = ({ children }: { children: React.ReactNode }) => {
 };
 
 const HeroSection = () => (
-  <section className="gradient-hero pt-28 pb-16 md:pt-36 md:pb-24 relative overflow-hidden">
+  <section className="gradient-hero pt-28 pb-20 md:pt-36 md:pb-28 relative overflow-hidden">
     <div className="absolute top-20 left-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl animate-float" />
     <div
       className="absolute bottom-10 right-10 w-96 h-96 bg-accent/5 rounded-full blur-3xl animate-float"
       style={{ animationDelay: "1.5s" }}
     />
-    <div className="absolute right-4 md:right-16 top-24 md:top-28 w-32 h-32 md:w-40 md:h-40 rounded-3xl overflow-hidden shadow-elevated bg-white/80 hidden sm:block">
+    <div className="absolute right-4 md:right-20 top-28 md:top-32 w-36 h-36 sm:w-40 sm:h-40 md:w-60 md:h-60 rounded-[32px] overflow-hidden shadow-elevated bg-white/80">
       <img src="/icon.png" alt="Quick Glow Grocer" className="w-full h-full object-cover" />
     </div>
 
