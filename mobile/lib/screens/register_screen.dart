@@ -69,7 +69,7 @@ class _RegisterScreenState extends State<RegisterScreen>
     });
     try {
       final response = await http.post(
-        Uri.parse('$apiBase/auth/register'),
+        Uri.parse('${Env.apiBaseUrl}/auth/register'),
         headers: const {'Content-Type': 'application/json'},
         body: jsonEncode({
           'name': _nameController.text.trim(),

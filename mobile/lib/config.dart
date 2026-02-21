@@ -1,11 +1,25 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 
-const bool useProductionApi = false;
+class Env {
+  static const bool useProduction = true;
 
-const String _localMobileApiBase = 'http://10.0.2.2:5000/api';
-const String _localWebApiBase = 'http://localhost:5000/api';
-const String _productionApiBase = 'http://ecomb.speshwayhrms.com/api';
+  static String get localBaseUrl {
+    const fromEnv = String.fromEnvironment('LOCAL_BASE_URL');
+    if (fromEnv.isNotEmpty) return fromEnv;
+    if (!kIsWeb && Platform.isAndroid) return 'http://10.0.2.2:5000';
+    return 'http://localhost:5000';
+  }
 
-final String apiBase = useProductionApi
-    ? _productionApiBase
-    : (kIsWeb ? _localWebApiBase : _localMobileApiBase);
+  static String get productionBaseUrl {
+    return 'https://ecomb.speshwayhrms.com';
+  }
+
+  static String get baseUrl {
+    return useProduction ? productionBaseUrl : localBaseUrl;
+  }
+
+  static String get apiBaseUrl =>
+      baseUrl.endsWith('/api') ? baseUrl : '$baseUrl/api';
+}

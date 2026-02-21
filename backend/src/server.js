@@ -27,22 +27,30 @@ const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/quickglow";
 const NODE_ENV = process.env.NODE_ENV || "development";
 
-let corsOptions;
-if (NODE_ENV === "production") {
-  const origins = (process.env.CORS_ORIGINS || "")
-    .split(",")
-    .map((origin) => origin.trim())
-    .filter(Boolean);
-  corsOptions = {
-    origin: origins.length > 0 ? origins : true,
-    credentials: true,
-  };
-} else {
-  corsOptions = {
-    origin: true,
-    credentials: true,
-  };
-}
+const allowedOrigins = (process.env.FRONTEND_URLS || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const isDev = NODE_ENV !== "production";
+const devOriginPrefixes = ["http://localhost:", "http://127.0.0.1:", "http://0.0.0.0:"];
+
+const corsOptions = {
+  origin(origin, callback) {
+    if (!origin) return callback(null, true);
+    const normalizedOrigin = origin.trim();
+    const allowedByEnv = allowedOrigins.includes("*") || allowedOrigins.includes(normalizedOrigin);
+    const allowedByDevDefault =
+      isDev && devOriginPrefixes.some((prefix) => normalizedOrigin.startsWith(prefix));
+
+    if (allowedByEnv || allowedByDevDefault) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+};
 
 app.use(cors(corsOptions));
 app.use(express.json({ limit: "10mb" }));

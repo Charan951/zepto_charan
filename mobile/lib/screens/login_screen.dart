@@ -60,7 +60,7 @@ class _LoginScreenState extends State<LoginScreen>
     });
     try {
       final response = await http.post(
-        Uri.parse('$apiBase/auth/login'),
+        Uri.parse('${Env.apiBaseUrl}/auth/login'),
         headers: const {'Content-Type': 'application/json'},
         body: jsonEncode({
           'email': _emailController.text.trim(),

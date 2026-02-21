@@ -52,8 +52,8 @@ class _HomeScreenState extends State<HomeScreen> {
     });
     try {
       final responses = await Future.wait([
-        http.get(Uri.parse('$apiBase/categories')),
-        http.get(Uri.parse('$apiBase/products')),
+        http.get(Uri.parse('${Env.apiBaseUrl}/categories')),
+        http.get(Uri.parse('${Env.apiBaseUrl}/products')),
       ]);
       final categoriesJson =
           jsonDecode(responses[0].body.isEmpty ? '{}' : responses[0].body)
@@ -70,15 +70,15 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           _categories = categoriesList is List
               ? categoriesList
-                  .whereType<Map<String, dynamic>>()
-                  .map(Category.fromJson)
-                  .toList()
+                    .whereType<Map<String, dynamic>>()
+                    .map(Category.fromJson)
+                    .toList()
               : <Category>[];
           _products = productsList is List
               ? productsList
-                  .whereType<Map<String, dynamic>>()
-                  .map(Product.fromJson)
-                  .toList()
+                    .whereType<Map<String, dynamic>>()
+                    .map(Product.fromJson)
+                    .toList()
               : <Product>[];
         });
       } else {
@@ -114,7 +114,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
     try {
       final response = await http.get(
-        Uri.parse('$apiBase/orders/my'),
+        Uri.parse('${Env.apiBaseUrl}/orders/my'),
         headers: {'Authorization': 'Bearer ${widget.token}'},
       );
       final data =
@@ -124,9 +124,9 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           _orders = ordersList is List
               ? ordersList
-                  .whereType<Map<String, dynamic>>()
-                  .map(Order.fromJson)
-                  .toList()
+                    .whereType<Map<String, dynamic>>()
+                    .map(Order.fromJson)
+                    .toList()
               : <Order>[];
         });
       } else {
@@ -290,7 +290,7 @@ class _HomeScreenState extends State<HomeScreen> {
       }).toList();
 
       final response = await http.post(
-        Uri.parse('$apiBase/orders/checkout'),
+        Uri.parse('${Env.apiBaseUrl}/orders/checkout'),
         headers: const {'Content-Type': 'application/json'},
         body: jsonEncode({
           'customerName': nameController.text.trim(),
@@ -436,26 +436,26 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: _isLoadingData
                           ? const Center(child: CircularProgressIndicator())
                           : _error != null
-                              ? Center(child: Text(_error!))
-                              : AnimatedSwitcher(
-                                  duration: const Duration(milliseconds: 260),
-                                  switchInCurve: Curves.easeOutCubic,
-                                  switchOutCurve: Curves.easeInCubic,
-                                  transitionBuilder: (child, animation) {
-                                    final offsetAnimation = Tween<Offset>(
-                                      begin: const Offset(0.08, 0),
-                                      end: Offset.zero,
-                                    ).animate(animation);
-                                    return FadeTransition(
-                                      opacity: animation,
-                                      child: SlideTransition(
-                                        position: offsetAnimation,
-                                        child: child,
-                                      ),
-                                    );
-                                  },
-                                  child: _buildTabBody(),
-                                ),
+                          ? Center(child: Text(_error!))
+                          : AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 260),
+                              switchInCurve: Curves.easeOutCubic,
+                              switchOutCurve: Curves.easeInCubic,
+                              transitionBuilder: (child, animation) {
+                                final offsetAnimation = Tween<Offset>(
+                                  begin: const Offset(0.08, 0),
+                                  end: Offset.zero,
+                                ).animate(animation);
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: SlideTransition(
+                                    position: offsetAnimation,
+                                    child: child,
+                                  ),
+                                );
+                              },
+                              child: _buildTabBody(),
+                            ),
                     ),
                     const SizedBox(height: 96),
                   ],
@@ -487,4 +487,3 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
-

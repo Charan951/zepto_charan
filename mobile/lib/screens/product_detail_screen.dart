@@ -44,7 +44,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     });
     try {
       final response = await http.get(
-        Uri.parse('$apiBase/products/${widget.productId}'),
+        Uri.parse('${Env.apiBaseUrl}/products/${widget.productId}'),
       );
       final data =
           jsonDecode(response.body.isEmpty ? '{}' : response.body) as Map;
@@ -380,4 +380,3 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     );
   }
 }
-
