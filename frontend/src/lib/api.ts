@@ -1,4 +1,6 @@
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
+const RAW_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+const NORMALIZED_BASE = RAW_BASE.endsWith("/") ? RAW_BASE.slice(0, -1) : RAW_BASE;
+const API_BASE = `${NORMALIZED_BASE}/api`;
 
 export type User = { id: string; name: string; email: string; role: "user" | "admin" };
 
