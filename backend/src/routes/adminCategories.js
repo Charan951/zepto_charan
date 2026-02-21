@@ -10,11 +10,11 @@ router.get("/", async (req, res) => {
 
 router.post("/", async (req, res) => {
   try {
-    const { name, description, isActive } = req.body;
+    const { name, description, isActive, icon, color } = req.body;
     if (!name) return res.status(400).json({ message: "Name is required" });
     const existing = await Category.findOne({ name });
     if (existing) return res.status(409).json({ message: "Category name already exists" });
-    const category = await Category.create({ name, description, isActive });
+    const category = await Category.create({ name, description, isActive, icon, color });
     res.status(201).json({ category });
   } catch (err) {
     res.status(500).json({ message: "Server error" });
@@ -23,10 +23,10 @@ router.post("/", async (req, res) => {
 
 router.put("/:id", async (req, res) => {
   try {
-    const { name, description, isActive } = req.body;
+    const { name, description, isActive, icon, color } = req.body;
     const category = await Category.findByIdAndUpdate(
       req.params.id,
-      { name, description, isActive },
+      { name, description, isActive, icon, color },
       { new: true, runValidators: true },
     );
     if (!category) return res.status(404).json({ message: "Category not found" });

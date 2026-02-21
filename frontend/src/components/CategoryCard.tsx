@@ -1,6 +1,6 @@
-import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
-import { Category } from '@/lib/api';
+import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
+import { Category } from "@/lib/api";
 
 interface Props {
   category: Category;
@@ -8,26 +8,36 @@ interface Props {
 }
 
 const iconMap: Record<string, string> = {
-  'Fruits & Vegetables': '🥬',
-  'Dairy & Eggs': '🥛',
-  Snacks: '🍿',
-  Beverages: '🥤',
-  'Personal Care': '🧴',
-  Household: '🏠',
-  Bakery: '🍞',
-  'Meat & Fish': '🥩',
+  "Fruits & Vegetables": "🥬",
+  "Dairy & Eggs": "🥛",
+  Snacks: "🍿",
+  Beverages: "🥤",
+  "Personal Care": "🧴",
+  Household: "🏠",
+  Bakery: "🍞",
+  "Meat & Fish": "🥩",
 };
 
 const colorMap: Record<string, string> = {
-  'Fruits & Vegetables': 'hsl(120, 50%, 92%)',
-  'Dairy & Eggs': 'hsl(45, 80%, 92%)',
-  Snacks: 'hsl(15, 80%, 92%)',
-  Beverages: 'hsl(200, 70%, 92%)',
-  'Personal Care': 'hsl(300, 50%, 92%)',
-  Household: 'hsl(30, 60%, 92%)',
-  Bakery: 'hsl(35, 80%, 92%)',
-  'Meat & Fish': 'hsl(0, 60%, 92%)',
+  "Fruits & Vegetables": "hsl(120, 50%, 92%)",
+  "Dairy & Eggs": "hsl(45, 80%, 92%)",
+  Snacks: "hsl(15, 80%, 92%)",
+  Beverages: "hsl(200, 70%, 92%)",
+  "Personal Care": "hsl(300, 50%, 92%)",
+  Household: "hsl(30, 60%, 92%)",
+  Bakery: "hsl(35, 80%, 92%)",
+  "Meat & Fish": "hsl(0, 60%, 92%)",
 };
+
+function resolveIcon(category: Category) {
+  const value = category.icon && category.icon.trim().length > 0 ? category.icon : iconMap[category.name];
+  return value || "🛒";
+}
+
+function resolveColor(category: Category) {
+  const value = category.color && category.color.trim().length > 0 ? category.color : colorMap[category.name];
+  return value || "hsl(0, 0%, 95%)";
+}
 
 const CategoryCard = ({ category, index = 0 }: Props) => (
   <motion.div
@@ -41,9 +51,9 @@ const CategoryCard = ({ category, index = 0 }: Props) => (
     >
       <div
         className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl transition-transform group-hover:scale-110"
-        style={{ backgroundColor: colorMap[category.name] || 'hsl(0, 0%, 95%)' }}
+        style={{ backgroundColor: resolveColor(category) }}
       >
-        {iconMap[category.name] || '🛒'}
+        {resolveIcon(category)}
       </div>
       <div>
         <h3 className="font-semibold text-sm text-foreground">{category.name}</h3>

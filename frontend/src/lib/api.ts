@@ -7,6 +7,8 @@ export type User = { id: string; name: string; email: string; role: "user" | "ad
 export type Category = {
   _id: string;
   name: string;
+  icon?: string;
+  color?: string;
   description?: string;
   isActive: boolean;
 };
@@ -67,9 +69,12 @@ export const api = {
   me: () => request("/users/me"),
   adminStats: () => request("/users/admin/stats"),
   categoryList: () => request("/admin/categories"),
-  categoryCreate: (payload: { name: string; description?: string; isActive?: boolean }) =>
+  categoryCreate: (payload: { name: string; description?: string; isActive?: boolean; icon?: string; color?: string }) =>
     request("/admin/categories", { method: "POST", body: JSON.stringify(payload) }),
-  categoryUpdate: (id: string, payload: { name: string; description?: string; isActive?: boolean }) =>
+  categoryUpdate: (
+    id: string,
+    payload: { name: string; description?: string; isActive?: boolean; icon?: string; color?: string },
+  ) =>
     request(`/admin/categories/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
   categoryDelete: (id: string) => request(`/admin/categories/${id}`, { method: "DELETE" }),
   productList: () => request("/admin/products"),

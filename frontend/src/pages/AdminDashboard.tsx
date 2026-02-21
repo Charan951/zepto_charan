@@ -17,9 +17,14 @@ export default function AdminDashboard() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [categoryForm, setCategoryForm] = useState<{ id?: string; name: string; description: string; isActive: boolean }>(
-    { name: "", description: "", isActive: true },
-  );
+  const [categoryForm, setCategoryForm] = useState<{
+    id?: string;
+    name: string;
+    description: string;
+    icon: string;
+    color: string;
+    isActive: boolean;
+  }>({ name: "", description: "", icon: "", color: "", isActive: true });
   const [productForm, setProductForm] = useState<{
     id?: string;
     name: string;
@@ -46,6 +51,22 @@ export default function AdminDashboard() {
   const [orderSort, setOrderSort] = useState<"newest" | "oldest">("newest");
   const { logout } = useAuth();
   const navigate = useNavigate();
+
+  const categorySuggestions: { name: string; icon: string; color: string }[] = [
+    { name: "Fruits & Vegetables", icon: "🥬", color: "hsl(120, 50%, 92%)" },
+    { name: "Dairy & Eggs", icon: "🥛", color: "hsl(45, 80%, 92%)" },
+    { name: "Snacks", icon: "🍿", color: "hsl(15, 80%, 92%)" },
+    { name: "Beverages", icon: "🥤", color: "hsl(200, 70%, 92%)" },
+    { name: "Personal Care", icon: "🧴", color: "hsl(300, 50%, 92%)" },
+    { name: "Household", icon: "🧼", color: "hsl(30, 60%, 92%)" },
+    { name: "Bakery", icon: "🍞", color: "hsl(35, 80%, 92%)" },
+    { name: "Meat & Fish", icon: "🥩", color: "hsl(0, 60%, 92%)" },
+    { name: "Frozen Foods", icon: "🧊", color: "hsl(210, 70%, 92%)" },
+    { name: "Baby Care", icon: "👶", color: "hsl(340, 80%, 95%)" },
+    { name: "Pet Care", icon: "🐾", color: "hsl(30, 80%, 95%)" },
+    { name: "Pharmacy / Health", icon: "💊", color: "hsl(0, 70%, 95%)" },
+    { name: "Cleaning Supplies", icon: "🧽", color: "hsl(45, 70%, 92%)" },
+  ];
 
   useEffect(() => {
     api
@@ -85,7 +106,7 @@ export default function AdminDashboard() {
   }
 
   function resetCategoryForm() {
-    setCategoryForm({ id: undefined, name: "", description: "", isActive: true });
+    setCategoryForm({ id: undefined, name: "", description: "", icon: "", color: "", isActive: true });
   }
 
   function resetProductForm() {
@@ -111,6 +132,8 @@ export default function AdminDashboard() {
           name: categoryForm.name,
           description: categoryForm.description || undefined,
           isActive: categoryForm.isActive,
+          icon: categoryForm.icon || undefined,
+          color: categoryForm.color || undefined,
         });
         setCategories((prev) => prev.map((c) => (c._id === data.category._id ? data.category : c)));
       } else {
@@ -118,6 +141,8 @@ export default function AdminDashboard() {
           name: categoryForm.name,
           description: categoryForm.description || undefined,
           isActive: categoryForm.isActive,
+          icon: categoryForm.icon || undefined,
+          color: categoryForm.color || undefined,
         });
         setCategories((prev) => [data.category, ...prev]);
       }
@@ -537,6 +562,49 @@ export default function AdminDashboard() {
                   onChange={(e) => setCategoryForm((f) => ({ ...f, description: e.target.value }))}
                 />
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <div className="text-sm mb-1">Icon</div>
+                  <Input
+                    value={categoryForm.icon}
+                    onChange={(e) => setCategoryForm((f) => ({ ...f, icon: e.target.value }))}
+                    placeholder="e.g. 🥬"
+                  />
+                </div>
+                <div>
+                  <div className="text-sm mb-1">Color</div>
+                  <Input
+                    value={categoryForm.color}
+                    onChange={(e) => setCategoryForm((f) => ({ ...f, color: e.target.value }))}
+                    placeholder="e.g. hsl(120, 50%, 92%)"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-xs text-muted-foreground">Quick suggestions</div>
+                <div className="flex flex-wrap gap-2">
+                  {categorySuggestions.map((s) => (
+                    <Button
+                      key={s.name}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 px-2 text-xs"
+                      onClick={() =>
+                        setCategoryForm((f) => ({
+                          ...f,
+                          name: f.name || s.name,
+                          icon: s.icon,
+                          color: s.color,
+                        }))
+                      }
+                    >
+                      <span className="mr-1">{s.icon}</span>
+                      <span className="truncate max-w-[120px]">{s.name}</span>
+                    </Button>
+                  ))}
+                </div>
+              </div>
               <div className="flex items-center gap-2">
                 <input
                   id="category-active"
@@ -591,6 +659,8 @@ export default function AdminDashboard() {
                               id: c._id,
                               name: c.name,
                               description: c.description || "",
+                              icon: c.icon || "",
+                              color: c.color || "",
                               isActive: c.isActive,
                             })
                           }

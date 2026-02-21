@@ -49,13 +49,12 @@ const Navbar = () => {
       }`}
     >
       <div className="container mx-auto px-4 flex items-center justify-between h-16 md:h-18">
-        {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-lg">F</span>
+          <div className="w-9 h-9 rounded-2xl overflow-hidden shadow-card bg-white/80 flex items-center justify-center">
+            <img src="/icon.png" alt="Quick Glow Grocer" className="w-full h-full object-cover" />
           </div>
           <span className="font-bold text-xl text-foreground">
-            Fresh<span className="text-gradient-primary">ly</span>
+            Quick<span className="text-gradient-primary">Glow</span>
           </span>
         </Link>
 

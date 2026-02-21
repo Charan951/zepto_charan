@@ -34,9 +34,14 @@ export default function Login() {
   return (
     <div className="container mx-auto max-w-md py-16">
       <Card className="glass-card">
-        <CardHeader>
-          <CardTitle>Admin Login</CardTitle>
-          <CardDescription>Sign in to manage the store</CardDescription>
+        <CardHeader className="flex flex-col items-center gap-3">
+          <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-card bg-white/80 flex items-center justify-center">
+            <img src="/icon.png" alt="Quick Glow Grocer" className="w-full h-full object-cover" />
+          </div>
+          <div className="text-center">
+            <CardTitle>Admin Login</CardTitle>
+            <CardDescription>Sign in to manage the store</CardDescription>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-4">

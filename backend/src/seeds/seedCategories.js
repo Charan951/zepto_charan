@@ -12,14 +12,62 @@ dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 const MONGODB_URI = process.env.MONGODB_URI;
 
 const DEFAULT_CATEGORIES = [
-  { name: "Fruits & Vegetables", description: "Fresh fruits and vegetables for everyday cooking", isActive: true },
-  { name: "Dairy & Eggs", description: "Milk, yogurt, cheese, and eggs", isActive: true },
-  { name: "Snacks", description: "Quick bites, chips, and munchies", isActive: true },
-  { name: "Beverages", description: "Juices, soft drinks, and more", isActive: true },
-  { name: "Personal Care", description: "Daily personal and hygiene essentials", isActive: true },
-  { name: "Household", description: "Home cleaning and household supplies", isActive: true },
-  { name: "Bakery", description: "Breads, buns, and baked treats", isActive: true },
-  { name: "Meat & Fish", description: "Fresh meat, poultry, and seafood", isActive: true },
+  {
+    name: "Fruits & Vegetables",
+    description: "Fresh fruits and vegetables for everyday cooking",
+    isActive: true,
+    icon: "🥬",
+    color: "hsl(120, 50%, 92%)",
+  },
+  {
+    name: "Dairy & Eggs",
+    description: "Milk, yogurt, cheese, and eggs",
+    isActive: true,
+    icon: "🥛",
+    color: "hsl(45, 80%, 92%)",
+  },
+  {
+    name: "Snacks",
+    description: "Quick bites, chips, and munchies",
+    isActive: true,
+    icon: "🍿",
+    color: "hsl(15, 80%, 92%)",
+  },
+  {
+    name: "Beverages",
+    description: "Juices, soft drinks, and more",
+    isActive: true,
+    icon: "🥤",
+    color: "hsl(200, 70%, 92%)",
+  },
+  {
+    name: "Personal Care",
+    description: "Daily personal and hygiene essentials",
+    isActive: true,
+    icon: "🧴",
+    color: "hsl(300, 50%, 92%)",
+  },
+  {
+    name: "Household",
+    description: "Home cleaning and household supplies",
+    isActive: true,
+    icon: "🏠",
+    color: "hsl(30, 60%, 92%)",
+  },
+  {
+    name: "Bakery",
+    description: "Breads, buns, and baked treats",
+    isActive: true,
+    icon: "🍞",
+    color: "hsl(35, 80%, 92%)",
+  },
+  {
+    name: "Meat & Fish",
+    description: "Fresh meat, poultry, and seafood",
+    isActive: true,
+    icon: "🥩",
+    color: "hsl(0, 60%, 92%)",
+  },
 ];
 
 async function run() {
@@ -50,4 +98,3 @@ async function run() {
 }
 
 run();
-

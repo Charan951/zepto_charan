@@ -19,7 +19,13 @@ const SectionHeader = ({ children }: { children: React.ReactNode }) => {
 const HeroSection = () => (
   <section className="gradient-hero pt-28 pb-16 md:pt-36 md:pb-24 relative overflow-hidden">
     <div className="absolute top-20 left-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl animate-float" />
-    <div className="absolute bottom-10 right-10 w-96 h-96 bg-accent/5 rounded-full blur-3xl animate-float" style={{ animationDelay: '1.5s' }} />
+    <div
+      className="absolute bottom-10 right-10 w-96 h-96 bg-accent/5 rounded-full blur-3xl animate-float"
+      style={{ animationDelay: "1.5s" }}
+    />
+    <div className="absolute right-4 md:right-16 top-24 md:top-28 w-32 h-32 md:w-40 md:h-40 rounded-3xl overflow-hidden shadow-elevated bg-white/80 hidden sm:block">
+      <img src="/icon.png" alt="Quick Glow Grocer" className="w-full h-full object-cover" />
+    </div>
 
     <div className="container mx-auto px-4 relative">
       <div className="max-w-2xl mx-auto text-center md:text-left md:mx-0">
