@@ -145,21 +145,21 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       width: double.infinity,
                       child:
                           product.imageUrl != null &&
-                                  product.imageUrl!.isNotEmpty
-                              ? Image.network(product.imageUrl!, fit: BoxFit.cover)
-                              : Container(
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    product.name.isNotEmpty
-                                        ? product.name.characters.first
-                                            .toUpperCase()
-                                        : '?',
-                                    style: const TextStyle(
-                                      fontSize: 40,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
+                              product.imageUrl!.isNotEmpty
+                          ? Image.network(product.imageUrl!, fit: BoxFit.cover)
+                          : Container(
+                              alignment: Alignment.center,
+                              child: Text(
+                                product.name.isNotEmpty
+                                    ? product.name.characters.first
+                                          .toUpperCase()
+                                    : '?',
+                                style: const TextStyle(
+                                  fontSize: 40,
+                                  fontWeight: FontWeight.w700,
                                 ),
+                              ),
+                            ),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -270,12 +270,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               iconSize: 20,
                               onPressed:
                                   product.stock > 0 && _quantity < product.stock
-                                      ? () {
-                                          setState(() {
-                                            _quantity += 1;
-                                          });
-                                        }
-                                      : null,
+                                  ? () {
+                                      setState(() {
+                                        _quantity += 1;
+                                      });
+                                    }
+                                  : null,
                               icon: const Icon(Icons.add),
                             ),
                           ],

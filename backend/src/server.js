@@ -27,27 +27,29 @@ const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/quickglow";
 const NODE_ENV = process.env.NODE_ENV || "development";
 
-const allowedOrigins = (process.env.FRONTEND_URLS || "")
+const normalizeOrigin = (origin) => origin.replace(/\/$/, "");
+
+const rawAllowedOrigins = (process.env.FRONTEND_URLS || "")
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
 
-const isDev = NODE_ENV !== "production";
-const devOriginPrefixes = ["http://localhost:", "http://127.0.0.1:", "http://0.0.0.0:"];
-const allowLocalhostInProd = process.env.ALLOW_LOCALHOST_ORIGINS_IN_PROD === "true";
+const defaultFrontendOrigins = ["https://ecom.speshwayhrms.com", "https://ecomb.speshwayhrms.com"];
+
+const allowedOrigins = rawAllowedOrigins.length > 0 ? rawAllowedOrigins : defaultFrontendOrigins;
+const normalizedAllowedOrigins = allowedOrigins.map(normalizeOrigin);
+
+const localOriginPrefixes = ["http://localhost:", "http://127.0.0.1:", "http://0.0.0.0:"];
 
 const corsOptions = {
   origin(origin, callback) {
     if (!origin) return callback(null, true);
-    const normalizedOrigin = origin.trim();
-    const allowedByEnv = allowedOrigins.includes("*") || allowedOrigins.includes(normalizedOrigin);
-    const allowedByDevDefault =
-      isDev && devOriginPrefixes.some((prefix) => normalizedOrigin.startsWith(prefix));
-    const allowedByLocalhostProd =
-      allowLocalhostInProd &&
-      devOriginPrefixes.some((prefix) => normalizedOrigin.startsWith(prefix));
+    const normalizedOrigin = normalizeOrigin(origin.trim());
+    const allowedByEnv =
+      normalizedAllowedOrigins.includes("*") || normalizedAllowedOrigins.includes(normalizedOrigin);
+    const allowedByLocal = localOriginPrefixes.some((prefix) => normalizedOrigin.startsWith(prefix));
 
-    if (allowedByEnv || allowedByDevDefault || allowedByLocalhostProd) {
+    if (allowedByEnv || allowedByLocal) {
       callback(null, true);
     } else {
       callback(new Error("Not allowed by CORS"));
