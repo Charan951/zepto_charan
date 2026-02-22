@@ -63,7 +63,8 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
 app.get("/api/health", (req, res) => {
-  res.json({ status: "ok" });
+  const dbReady = mongoose.connection.readyState === 1;
+  res.json({ status: "ok", dbConnected: dbReady });
 });
 
 app.use("/api/auth", authRoutes);
@@ -75,12 +76,13 @@ app.use("/api/admin/products", requireAuth, requireRole("admin"), adminProductRo
 app.use("/api/admin/orders", requireAuth, requireRole("admin"), adminOrderRoutes);
 app.use("/api/orders", orderRoutes);
 
-app.listen(PORT, () => console.log(`API server running on http://localhost:${PORT}`));
-
 mongoose
   .connect(MONGODB_URI)
-  .then(() => console.log("MongoDB connected"))
+  .then(() => {
+    console.log("MongoDB connected");
+    app.listen(PORT, () => console.log(`API server running on http://localhost:${PORT}`));
+  })
   .catch((err) => {
     console.error("MongoDB connection failed:", err.message);
-    console.error("API will run, but DB-backed routes will not work until connected.");
+    process.exit(1);
   });
