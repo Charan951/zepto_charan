@@ -1,4 +1,6 @@
-const RAW_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+const RAW_BASE =
+  import.meta.env.VITE_API_BASE ||
+  (import.meta.env.DEV ? "http://localhost:5000" : "https://ecomb.speshwayhrms.com");
 const NORMALIZED_BASE = RAW_BASE.endsWith("/") ? RAW_BASE.slice(0, -1) : RAW_BASE;
 const API_BASE = `${NORMALIZED_BASE}/api`;
 

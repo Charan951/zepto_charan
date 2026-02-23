@@ -27,17 +27,21 @@ const app = express();
 const server = http.createServer(app);
 
 const PORT = process.env.PORT || 5000;
-const NODE_ENV = process.env.NODE_ENV || "development";
 const MONGO_URI =
   process.env.MONGO_URI ||
   process.env.MONGODB_URI ||
   "mongodb://127.0.0.1:27017/quickglow";
 
+const defaultProdOrigins = [
+  "https://ecom.speshwayhrms.com",
+  "http://ecom.speshwayhrms.com",
+];
+
 const allowedOrigins = process.env.FRONTEND_URLS
   ? process.env.FRONTEND_URLS.split(",")
-  : [];
+  : defaultProdOrigins;
 
-const isDev = NODE_ENV !== "production";
+const isDev = process.env.NODE_ENV !== "production";
 const devOriginPrefixes = [
   "http://localhost:",
   "http://127.0.0.1:",
