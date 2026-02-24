@@ -12,6 +12,11 @@ interface Props {
 
 const ProductCard = ({ product, index = 0 }: Props) => {
   const { addToCart } = useCart();
+  const hasDiscount =
+    typeof product.originalPrice === 'number' && product.originalPrice > product.price;
+  const discountPercent = hasDiscount
+    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+    : null;
 
   return (
     <motion.div
@@ -34,6 +39,11 @@ const ProductCard = ({ product, index = 0 }: Props) => {
               No image
             </div>
           )}
+          {discountPercent !== null && (
+            <div className="absolute top-2 right-2 bg-emerald-500 text-[10px] font-semibold text-white px-2 py-1 rounded-full shadow-sm">
+              {discountPercent}% OFF
+            </div>
+          )}
         </div>
       </Link>
 
@@ -50,6 +60,13 @@ const ProductCard = ({ product, index = 0 }: Props) => {
         <div className="flex items-center justify-between">
           <div className="flex items-baseline gap-1.5">
             <span className="font-bold text-foreground">{formatPrice(product.price)}</span>
+            {hasDiscount && product.originalPrice != null && (
+              <>
+                <span className="text-xs text-muted-foreground line-through">
+                  {formatPrice(product.originalPrice)}
+                </span>
+              </>
+            )}
           </div>
           <motion.button
             whileTap={{ scale: 0.85 }}

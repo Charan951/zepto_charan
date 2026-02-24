@@ -1,10 +1,13 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import '../config.dart';
 import '../models.dart';
+
+final Map<String, Uint8List> _detailImageCache = {};
 
 class ProductDetailScreen extends StatefulWidget {
   final String productId;
@@ -29,6 +32,64 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   bool _isLoading = false;
   String? _error;
   int _quantity = 1;
+
+  Widget _buildDetailImage(
+    Product product, {
+    double fallbackFontSize = 40,
+    BoxFit fit = BoxFit.contain,
+  }) {
+    final url = product.imageUrl;
+    if (url == null || url.isEmpty) {
+      return _buildNameFallback(product.name, fontSize: fallbackFontSize);
+    }
+    if (url.startsWith('data:image')) {
+      final cached = _detailImageCache[url];
+      if (cached != null) {
+        return Image.memory(
+          cached,
+          fit: fit,
+          filterQuality: FilterQuality.medium,
+          gaplessPlayback: true,
+        );
+      }
+      final commaIndex = url.indexOf(',');
+      if (commaIndex != -1 && commaIndex + 1 < url.length) {
+        final base64Part = url.substring(commaIndex + 1);
+        try {
+          final bytes = base64Decode(base64Part);
+          _detailImageCache[url] = bytes;
+          return Image.memory(
+            bytes,
+            fit: fit,
+            filterQuality: FilterQuality.medium,
+            gaplessPlayback: true,
+          );
+        } catch (_) {
+          return _buildNameFallback(product.name, fontSize: fallbackFontSize);
+        }
+      }
+      return _buildNameFallback(product.name, fontSize: fallbackFontSize);
+    }
+    return Image.network(
+      url,
+      fit: fit,
+      filterQuality: FilterQuality.medium,
+      gaplessPlayback: true,
+      errorBuilder: (context, error, stackTrace) {
+        return _buildNameFallback(product.name, fontSize: fallbackFontSize);
+      },
+    );
+  }
+
+  Widget _buildNameFallback(String name, {double fontSize = 40}) {
+    return Container(
+      alignment: Alignment.center,
+      child: Text(
+        name.isNotEmpty ? name.characters.first.toUpperCase() : '?',
+        style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.w700),
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -112,6 +173,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final product = _product ?? widget.initialProduct;
+    final original = product.originalPrice;
+    final bool hasDiscount =
+        original != null && original > 0 && original > product.price;
+    final int? discountPercent = hasDiscount
+        ? (((original - product.price) / original) * 100).round()
+        : null;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -143,23 +210,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     child: SizedBox(
                       height: 220,
                       width: double.infinity,
-                      child:
-                          product.imageUrl != null &&
-                              product.imageUrl!.isNotEmpty
-                          ? Image.network(product.imageUrl!, fit: BoxFit.cover)
-                          : Container(
-                              alignment: Alignment.center,
-                              child: Text(
-                                product.name.isNotEmpty
-                                    ? product.name.characters.first
-                                          .toUpperCase()
-                                    : '?',
-                                style: const TextStyle(
-                                  fontSize: 40,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
+                      child: _buildDetailImage(product),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -196,24 +247,63 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         children: [
                           const Text('Price', style: TextStyle(fontSize: 13)),
                           const SizedBox(height: 4),
-                          Text(
-                            '₹${product.price.toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w700,
-                            ),
+                          Row(
+                            children: [
+                              Text(
+                                '₹${product.price.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              if (hasDiscount) ...[
+                                const SizedBox(width: 8),
+                                if (original != null)
+                                  Text(
+                                    '₹${original.toStringAsFixed(2)}',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      decoration: TextDecoration.lineThrough,
+                                      color: Colors.white.withValues(
+                                        alpha: 0.6,
+                                      ),
+                                    ),
+                                  ),
+                                if (discountPercent != null) ...[
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF22C55E),
+                                      borderRadius: BorderRadius.circular(999),
+                                    ),
+                                    child: Text(
+                                      '-$discountPercent%',
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ],
                           ),
                         ],
                       ),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          const Text('Stock', style: TextStyle(fontSize: 13)),
+                          const Text(
+                            'Availability',
+                            style: TextStyle(fontSize: 13),
+                          ),
                           const SizedBox(height: 4),
                           Text(
-                            product.stock > 0
-                                ? '${product.stock} available'
-                                : 'Out of stock',
+                            product.stock > 0 ? 'In stock' : 'Out of stock',
                             style: TextStyle(
                               fontSize: 14,
                               color: product.stock > 0
@@ -268,12 +358,23 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             ),
                             IconButton(
                               iconSize: 20,
-                              onPressed:
-                                  product.stock > 0 && _quantity < product.stock
+                              onPressed: product.stock > 0
                                   ? () {
-                                      setState(() {
-                                        _quantity += 1;
-                                      });
+                                      if (_quantity < product.stock) {
+                                        setState(() {
+                                          _quantity += 1;
+                                        });
+                                      } else {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              'Only ${product.stock} in stock',
+                                            ),
+                                          ),
+                                        );
+                                      }
                                     }
                                   : null,
                               icon: const Icon(Icons.add),
@@ -314,7 +415,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         ),
                         const SizedBox(height: 12),
                         SizedBox(
-                          height: 160,
+                          height: 220,
                           child: ListView.separated(
                             scrollDirection: Axis.horizontal,
                             itemCount: _similar.length,
@@ -323,7 +424,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             itemBuilder: (context, index) {
                               final item = _similar[index];
                               return SizedBox(
-                                width: 160,
+                                width: 180,
                                 child: Card(
                                   child: InkWell(
                                     onTap: () => _openSimilar(item),
@@ -332,7 +433,22 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                       child: Column(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
+                                        mainAxisSize: MainAxisSize.min,
                                         children: [
+                                          SizedBox(
+                                            height: 90,
+                                            width: double.infinity,
+                                            child: ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              child: _buildDetailImage(
+                                                item,
+                                                fallbackFontSize: 24,
+                                                fit: BoxFit.cover,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 8),
                                           Text(
                                             item.name,
                                             maxLines: 2,
@@ -355,13 +471,72 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                                 ),
                                               ),
                                             ),
-                                          const Spacer(),
-                                          Text(
-                                            '₹${item.price.toStringAsFixed(2)}',
-                                            style: const TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w600,
-                                            ),
+                                          const SizedBox(height: 4),
+                                          Builder(
+                                            builder: (context) {
+                                              final base = item.originalPrice;
+                                              final bool itemHasDiscount =
+                                                  base != null &&
+                                                  base > 0 &&
+                                                  base > item.price;
+                                              final int? itemDiscountPercent =
+                                                  itemHasDiscount
+                                                  ? (((base - item.price) /
+                                                                base) *
+                                                            100)
+                                                        .round()
+                                                  : null;
+                                              if (!itemHasDiscount) {
+                                                return Text(
+                                                  '₹${item.price.toStringAsFixed(2)}',
+                                                  style: const TextStyle(
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                );
+                                              }
+                                              return Row(
+                                                children: [
+                                                  Text(
+                                                    '₹${item.price.toStringAsFixed(2)}',
+                                                    style: const TextStyle(
+                                                      fontSize: 14,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                  if (base != null)
+                                                    Text(
+                                                      '₹${base.toStringAsFixed(2)}',
+                                                      style: TextStyle(
+                                                        fontSize: 12,
+                                                        decoration:
+                                                            TextDecoration
+                                                                .lineThrough,
+                                                        color: Colors.white
+                                                            .withValues(
+                                                              alpha: 0.6,
+                                                            ),
+                                                      ),
+                                                    ),
+                                                  if (itemDiscountPercent !=
+                                                      null) ...[
+                                                    const SizedBox(width: 4),
+                                                    Text(
+                                                      '-$itemDiscountPercent%',
+                                                      style: const TextStyle(
+                                                        fontSize: 11,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                        color: Colors
+                                                            .lightGreenAccent,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ],
+                                              );
+                                            },
                                           ),
                                         ],
                                       ),

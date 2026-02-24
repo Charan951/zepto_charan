@@ -29,6 +29,7 @@ export default function AdminDashboard() {
     id?: string;
     name: string;
     price: string;
+    originalPrice: string;
     stock: string;
     categoryId: string;
     description: string;
@@ -38,6 +39,7 @@ export default function AdminDashboard() {
   }>({
     name: "",
     price: "",
+    originalPrice: "",
     stock: "",
     categoryId: "",
     description: "",
@@ -114,6 +116,7 @@ export default function AdminDashboard() {
       id: undefined,
       name: "",
       price: "",
+      originalPrice: "",
       stock: "",
       categoryId: "",
       description: "",
@@ -175,6 +178,8 @@ export default function AdminDashboard() {
     const payload = {
       name: productForm.name,
       price: Number(productForm.price),
+      originalPrice:
+        productForm.originalPrice.trim() !== "" ? Number(productForm.originalPrice) : undefined,
       stock: Number(productForm.stock),
       category: productForm.categoryId || undefined,
       description: productForm.description || undefined,
@@ -731,6 +736,18 @@ export default function AdminDashboard() {
                 </div>
               </div>
               <div>
+                <div className="text-sm mb-1">Original price (optional)</div>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={productForm.originalPrice}
+                  onChange={(e) =>
+                    setProductForm((f) => ({ ...f, originalPrice: e.target.value }))
+                  }
+                />
+              </div>
+              <div>
                 <div className="text-sm mb-1">Category</div>
                 <Select
                   value={productForm.categoryId}
@@ -817,7 +834,17 @@ export default function AdminDashboard() {
                       <td className="py-2">
                         {typeof p.category === "object" && p.category !== null ? p.category.name : ""}
                       </td>
-                      <td className="py-2">{formatPrice(p.price)}</td>
+                      <td className="py-2">
+                        <div className="flex flex-col">
+                          <span>{formatPrice(p.price)}</span>
+                          {typeof p.originalPrice === "number" &&
+                            p.originalPrice > p.price && (
+                              <span className="text-xs text-muted-foreground line-through">
+                                {formatPrice(p.originalPrice)}
+                              </span>
+                            )}
+                        </div>
+                      </td>
                       <td className="py-2">{p.stock}</td>
                       <td className="py-2">{p.isActive ? "Active" : "Hidden"}</td>
                       <td className="py-2 text-right space-x-2">
@@ -829,6 +856,10 @@ export default function AdminDashboard() {
                               id: p._id,
                               name: p.name,
                               price: String(p.price),
+                              originalPrice:
+                                typeof p.originalPrice === "number"
+                                  ? String(p.originalPrice)
+                                  : "",
                               stock: String(p.stock),
                               categoryId:
                                 typeof p.category === "object" && p.category !== null ? p.category._id : productForm.categoryId,

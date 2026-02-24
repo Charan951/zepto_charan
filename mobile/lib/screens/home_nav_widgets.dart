@@ -2,8 +2,9 @@ part of 'home_screen.dart';
 
 class _CategoriesTab extends StatelessWidget {
   final List<Category> categories;
+  final void Function(Category category) onCategoryTap;
 
-  const _CategoriesTab({required this.categories});
+  const _CategoriesTab({required this.categories, required this.onCategoryTap});
 
   @override
   Widget build(BuildContext context) {
@@ -22,47 +23,55 @@ class _CategoriesTab extends StatelessWidget {
       ),
       itemBuilder: (context, index) {
         final category = categories[index];
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
-                color: Colors.white.withValues(alpha: 0.1),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        colors: [Color(0xFF2AF598), Color(0xFF00E4FF)],
+        return GestureDetector(
+          onTap: () => onCategoryTap(category),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(24),
+                  color: Colors.white.withValues(alpha: 0.1),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.22),
+                  ),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [Color(0xFF2AF598), Color(0xFF00E4FF)],
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.local_grocery_store_outlined,
+                        size: 18,
+                        color: Colors.black,
                       ),
                     ),
-                    child: const Icon(
-                      Icons.local_grocery_store_outlined,
-                      size: 18,
-                      color: Colors.black,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      category.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        category.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -140,8 +149,16 @@ class _ProfileTab extends StatelessWidget {
 
 class _LuxuryTopBar extends StatelessWidget {
   final String? userName;
+  final String address;
+  final bool isResolvingLocation;
+  final VoidCallback onAddressTap;
 
-  const _LuxuryTopBar({this.userName});
+  const _LuxuryTopBar({
+    this.userName,
+    required this.address,
+    required this.isResolvingLocation,
+    required this.onAddressTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -149,6 +166,13 @@ class _LuxuryTopBar extends StatelessWidget {
     final greetingName = (userName != null && userName!.trim().isNotEmpty)
         ? userName!.trim()
         : 'Guest shopper';
+    final trailing = isResolvingLocation
+        ? const SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )
+        : const Icon(Icons.keyboard_arrow_down_rounded, size: 18);
     return Row(
       children: [
         Expanded(
@@ -156,72 +180,73 @@ class _LuxuryTopBar extends StatelessWidget {
             borderRadius: BorderRadius.circular(999),
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-              child: Container(
-                height: 52,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(999),
-                  color: Colors.white.withValues(alpha: 0.08),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.28),
+              child: GestureDetector(
+                onTap: onAddressTap,
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 8,
                   ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [Color(0xFF2AF598), Color(0xFF00E4FF)],
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(999),
+                    color: Colors.white.withValues(alpha: 0.08),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.28),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            colors: [Color(0xFF2AF598), Color(0xFF00E4FF)],
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.place_outlined,
+                          size: 18,
+                          color: Colors.black,
                         ),
                       ),
-                      child: const Icon(
-                        Icons.place_outlined,
-                        size: 18,
-                        color: Colors.black,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            greetingName,
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.8),
-                              letterSpacing: 0.3,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              greetingName,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: Colors.white.withValues(alpha: 0.8),
+                                letterSpacing: 0.3,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 2),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  'Deliver to 123 Crystal Avenue',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    fontWeight: FontWeight.w600,
+                            const SizedBox(height: 2),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    address,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              const Icon(
-                                Icons.keyboard_arrow_down_rounded,
-                                size: 18,
-                              ),
-                            ],
-                          ),
-                        ],
+                                const SizedBox(width: 4),
+                                trailing,
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -344,13 +369,12 @@ class _GlassNavBar extends StatelessWidget {
     required this.onTabSelected,
     required this.activeColor,
   });
-
   @override
   Widget build(BuildContext context) {
     const items = [
-      _NavItemData(Icons.home_rounded, 'Home'),
       _NavItemData(Icons.grid_view_rounded, 'Categories'),
       _NavItemData(Icons.shopping_cart_rounded, 'Cart'),
+      _NavItemData(Icons.home_rounded, 'Home'),
       _NavItemData(Icons.receipt_long_rounded, 'Orders'),
       _NavItemData(Icons.person_rounded, 'Profile'),
     ];
@@ -759,4 +783,3 @@ class _OrdersTab extends StatelessWidget {
     );
   }
 }
-

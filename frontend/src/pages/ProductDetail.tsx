@@ -70,6 +70,12 @@ const ProductDetail = () => {
     );
   }
 
+  const hasDiscount =
+    typeof product.originalPrice === 'number' && product.originalPrice > product.price;
+  const discountPercent = hasDiscount
+    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+    : null;
+
   const handleAdd = () => {
     for (let i = 0; i < qty; i++) addToCart(product);
   };
@@ -113,6 +119,18 @@ const ProductDetail = () => {
 
             <div className="flex items-baseline gap-3">
               <span className="text-3xl font-bold">{formatPrice(product.price)}</span>
+              {hasDiscount && product.originalPrice != null && (
+                <>
+                  <span className="text-lg text-muted-foreground line-through">
+                    {formatPrice(product.originalPrice)}
+                  </span>
+                  {discountPercent !== null && (
+                    <span className="px-2 py-1 rounded-full bg-emerald-500 text-[11px] font-semibold text-white">
+                      {discountPercent}% OFF
+                    </span>
+                  )}
+                </>
+              )}
             </div>
 
             <div className="flex items-center gap-4">

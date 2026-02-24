@@ -13,7 +13,7 @@ router.get("/", async (req, res) => {
 
 router.post("/", async (req, res) => {
   try {
-    const { name, price, stock, category, description, imageUrl, imageData, isActive } = req.body;
+    const { name, price, originalPrice, stock, category, description, imageUrl, imageData, isActive } = req.body;
     if (!name || price == null || stock == null) {
       return res.status(400).json({ message: "Name, price and stock are required" });
     }
@@ -39,6 +39,7 @@ router.post("/", async (req, res) => {
     const product = await Product.create({
       name,
       price,
+      originalPrice,
       stock,
       category,
       description,
@@ -54,7 +55,7 @@ router.post("/", async (req, res) => {
 
 router.put("/:id", async (req, res) => {
   try {
-    const { name, price, stock, category, description, imageUrl, imageData, isActive } = req.body;
+    const { name, price, originalPrice, stock, category, description, imageUrl, imageData, isActive } = req.body;
 
     let finalImageUrl = imageUrl;
 
@@ -76,7 +77,7 @@ router.put("/:id", async (req, res) => {
 
     const product = await Product.findByIdAndUpdate(
       req.params.id,
-      { name, price, stock, category, description, imageUrl: finalImageUrl, isActive },
+      { name, price, originalPrice, stock, category, description, imageUrl: finalImageUrl, isActive },
       { new: true, runValidators: true },
     );
     if (!product) return res.status(404).json({ message: "Product not found" });

@@ -1,7 +1,10 @@
 import 'dart:convert';
 import 'dart:ui';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:glassmorphic_ui_kit/glassmorphic_ui_kit.dart';
 import 'package:http/http.dart' as http;
 
@@ -11,6 +14,8 @@ import 'product_detail_screen.dart';
 
 part 'home_browse_widgets.dart';
 part 'home_nav_widgets.dart';
+
+enum _AddressPickerAction { currentLocation, manual }
 
 class HomeScreen extends StatefulWidget {
   final String? token;
@@ -36,8 +41,19 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoadingData = false;
   bool _isLoadingOrders = false;
   String? _error;
-  int _tabIndex = 0;
+  int _tabIndex = 2;
   String _searchQuery = '';
+  String? _selectedCategoryId;
+  String? _deliveryAddress;
+  bool _isResolvingLocation = false;
+
+  String get _addressLabel {
+    final value = _deliveryAddress?.trim();
+    if (value != null && value.isNotEmpty) {
+      return value;
+    }
+    return 'Set delivery address';
+  }
 
   @override
   void initState() {
@@ -156,12 +172,204 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _addToCart(Product product) {
+  void _selectCategory(String? categoryId) {
+    setState(() {
+      if (_selectedCategoryId == categoryId) {
+        _selectedCategoryId = null;
+      } else {
+        _selectedCategoryId = categoryId;
+      }
+    });
+  }
+
+  void _openCategoryFromTab(Category category) {
+    setState(() {
+      _searchQuery = '';
+      _selectedCategoryId = category.id;
+      _tabIndex = 2;
+    });
+  }
+
+  Future<bool> _ensureLocationPermission() async {
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      await Geolocator.openLocationSettings();
+      return false;
+    }
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return false;
+      }
+    }
+    if (permission == LocationPermission.deniedForever) {
+      return false;
+    }
+    return true;
+  }
+
+  Future<void> _useCurrentLocation() async {
+    if (_isResolvingLocation) {
+      return;
+    }
+    setState(() {
+      _isResolvingLocation = true;
+    });
+    try {
+      final hasPermission = await _ensureLocationPermission();
+      if (!hasPermission) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Location permission is required to use GPS'),
+            ),
+          );
+        }
+        return;
+      }
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.best,
+      );
+      final placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+      String address;
+      if (placemarks.isNotEmpty) {
+        final place = placemarks.first;
+        final parts = <String?>[
+          place.name,
+          place.street,
+          place.subLocality,
+          place.locality,
+          place.administrativeArea,
+          place.postalCode,
+          place.country,
+        ];
+        final nonEmpty = parts
+            .where((part) => part != null && part.trim().isNotEmpty)
+            .map((part) => part!.trim())
+            .toList();
+        if (nonEmpty.isNotEmpty) {
+          address = nonEmpty.join(', ');
+        } else {
+          address =
+              '${position.latitude.toStringAsFixed(5)}, ${position.longitude.toStringAsFixed(5)}';
+        }
+      } else {
+        address =
+            '${position.latitude.toStringAsFixed(5)}, ${position.longitude.toStringAsFixed(5)}';
+      }
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _deliveryAddress = address;
+      });
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not get current location')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isResolvingLocation = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _enterAddressManually() async {
+    final controller = TextEditingController(text: _deliveryAddress ?? '');
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Delivery address'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(labelText: 'Address'),
+            maxLines: 3,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(false);
+              },
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed != true) {
+      return;
+    }
+    final value = controller.text.trim();
+    if (value.isEmpty) {
+      return;
+    }
+    setState(() {
+      _deliveryAddress = value;
+    });
+  }
+
+  Future<void> _chooseAddress() async {
+    final action = await showDialog<_AddressPickerAction>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Select delivery location'),
+          content: const Text(
+            'Use your current GPS location or enter an address manually.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(_AddressPickerAction.manual);
+              },
+              child: const Text('Enter address'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.of(context).pop(_AddressPickerAction.currentLocation);
+              },
+              child: const Text('Use current location'),
+            ),
+          ],
+        );
+      },
+    );
+    if (action == null) {
+      return;
+    }
+    if (action == _AddressPickerAction.manual) {
+      await _enterAddressManually();
+    } else {
+      await _useCurrentLocation();
+    }
+  }
+
+  void _addToCart(Product product, {int quantity = 1}) {
+    if (quantity <= 0) return;
     setState(() {
       final current = _cart[product.id] ?? 0;
-      if (current < product.stock) {
-        _cart[product.id] = current + 1;
+      final maxAllowed = product.stock;
+      if (maxAllowed <= 0) {
+        _cart.remove(product.id);
+        return;
       }
+      final next = current + quantity;
+      _cart[product.id] = next <= maxAllowed ? next : maxAllowed;
     });
   }
 
@@ -198,13 +406,23 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<Product> get _filteredProducts {
     final query = _searchQuery.trim().toLowerCase();
-    if (query.isEmpty) {
-      return _products;
-    }
     return _products.where((product) {
-      final name = product.name.toLowerCase();
-      final categoryName = product.category?.name.toLowerCase() ?? '';
-      return name.contains(query) || categoryName.contains(query);
+      final matchesQuery = () {
+        if (query.isEmpty) {
+          return true;
+        }
+        final name = product.name.toLowerCase();
+        final categoryName = product.category?.name.toLowerCase() ?? '';
+        return name.contains(query) || categoryName.contains(query);
+      }();
+      final matchesCategory = () {
+        if (_selectedCategoryId == null) {
+          return true;
+        }
+        final id = product.category?.id;
+        return id != null && id == _selectedCategoryId;
+      }();
+      return matchesQuery && matchesCategory;
     }).toList();
   }
 
@@ -216,7 +434,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final emailController = TextEditingController(
       text: widget.user?.email ?? '',
     );
-    final addressController = TextEditingController();
+    final addressController = TextEditingController(
+      text: _deliveryAddress ?? '',
+    );
     final phoneController = TextEditingController();
 
     final confirmed = await showDialog<bool>(
@@ -338,9 +558,7 @@ class _HomeScreenState extends State<HomeScreen> {
           initialProduct: product,
           allProducts: _products,
           onAddToCart: (selected, quantity) {
-            for (var i = 0; i < quantity; i++) {
-              _addToCart(selected);
-            }
+            _addToCart(selected, quantity: quantity);
           },
         ),
       ),
@@ -351,23 +569,13 @@ class _HomeScreenState extends State<HomeScreen> {
     switch (_tabIndex) {
       case 0:
         return KeyedSubtree(
-          key: const ValueKey('home_browse'),
-          child: _BrowseTab(
+          key: const ValueKey('home_categories'),
+          child: _CategoriesTab(
             categories: _categories,
-            products: _filteredProducts,
-            cart: _cart,
-            onAdd: _addToCart,
-            onRemove: _removeFromCart,
-            onOpenDetail: _openProductDetail,
-            onRefresh: _loadData,
+            onCategoryTap: _openCategoryFromTab,
           ),
         );
       case 1:
-        return KeyedSubtree(
-          key: const ValueKey('home_categories'),
-          child: _CategoriesTab(categories: _categories),
-        );
-      case 2:
         return KeyedSubtree(
           key: const ValueKey('home_cart'),
           child: _CartTab(
@@ -377,6 +585,21 @@ class _HomeScreenState extends State<HomeScreen> {
             onAdd: _addToCart,
             onRemove: _removeFromCart,
             onCheckout: _checkout,
+          ),
+        );
+      case 2:
+        return KeyedSubtree(
+          key: const ValueKey('home_browse'),
+          child: _BrowseTab(
+            categories: _categories,
+            products: _filteredProducts,
+            cart: _cart,
+            onAdd: _addToCart,
+            onRemove: _removeFromCart,
+            onOpenDetail: _openProductDetail,
+            selectedCategoryId: _selectedCategoryId,
+            onCategorySelected: _selectCategory,
+            onRefresh: _loadData,
           ),
         );
       case 3:
@@ -420,9 +643,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _LuxuryTopBar(userName: widget.user?.name),
+                    _LuxuryTopBar(
+                      userName: widget.user?.name,
+                      address: _addressLabel,
+                      isResolvingLocation: _isResolvingLocation,
+                      onAddressTap: _chooseAddress,
+                    ),
                     const SizedBox(height: 20),
-                    if (_tabIndex == 0)
+                    if (_tabIndex == 2)
                       _GlowingSearchBar(
                         placeholder: 'Search groceries, fruits, dairy...',
                         onChanged: (value) {
@@ -431,7 +659,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           });
                         },
                       ),
-                    if (_tabIndex == 0) const SizedBox(height: 20),
+                    if (_tabIndex == 2) const SizedBox(height: 20),
                     Expanded(
                       child: _isLoadingData
                           ? const Center(child: CircularProgressIndicator())
@@ -467,9 +695,9 @@ class _HomeScreenState extends State<HomeScreen> {
               bottom: 120,
               child: _FloatingCartButton(
                 itemCount: _cartCount,
-                isActive: _tabIndex == 2,
+                isActive: _tabIndex == 1,
                 onTap: () {
-                  _changeTab(2);
+                  _changeTab(1);
                 },
               ),
             ),

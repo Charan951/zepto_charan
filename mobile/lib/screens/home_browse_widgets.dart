@@ -1,5 +1,54 @@
 part of 'home_screen.dart';
 
+final Map<String, Uint8List> _inlineImageCache = {};
+
+Widget _buildProductImage({
+  required String? url,
+  required IconData fallbackIcon,
+  BoxFit fit = BoxFit.contain,
+}) {
+  if (url == null || url.isEmpty) {
+    return Icon(fallbackIcon, size: 34);
+  }
+  if (url.startsWith('data:image')) {
+    final cached = _inlineImageCache[url];
+    if (cached != null) {
+      return Image.memory(
+        cached,
+        fit: fit,
+        filterQuality: FilterQuality.medium,
+        gaplessPlayback: true,
+      );
+    }
+    final commaIndex = url.indexOf(',');
+    if (commaIndex != -1 && commaIndex + 1 < url.length) {
+      final base64Part = url.substring(commaIndex + 1);
+      try {
+        final bytes = base64Decode(base64Part);
+        _inlineImageCache[url] = bytes;
+        return Image.memory(
+          bytes,
+          fit: fit,
+          filterQuality: FilterQuality.medium,
+          gaplessPlayback: true,
+        );
+      } catch (_) {
+        return Icon(fallbackIcon, size: 34);
+      }
+    }
+    return Icon(fallbackIcon, size: 34);
+  }
+  return Image.network(
+    url,
+    fit: fit,
+    filterQuality: FilterQuality.medium,
+    gaplessPlayback: true,
+    errorBuilder: (context, error, stackTrace) {
+      return Icon(fallbackIcon, size: 34);
+    },
+  );
+}
+
 class _DiscountBadge extends StatelessWidget {
   final Product product;
 
@@ -21,7 +70,9 @@ class _DiscountBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final discount = _discountPercent;
-    final label = discount != null ? '${discount.round()}% OFF' : 'Limited offer';
+    final label = discount != null
+        ? '${discount.round()}% OFF'
+        : 'Limited offer';
     return Text(
       label,
       style: theme.textTheme.labelMedium?.copyWith(
@@ -198,12 +249,7 @@ class _HeroCarouselState extends State<_HeroCarousel> {
                                 ),
                               ),
                               const SizedBox(height: 8),
-                              Text(
-                                'From ₹${product.price.toStringAsFixed(2)}',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.8),
-                                ),
-                              ),
+                              _DiscountPriceRow(product: product),
                             ],
                           ),
                         ),
@@ -238,16 +284,12 @@ class _HeroCarouselState extends State<_HeroCarousel> {
                                       ),
                                     ),
                                     clipBehavior: Clip.antiAlias,
-                                    child: product.imageUrl != null &&
-                                            product.imageUrl!.isNotEmpty
-                                        ? Image.network(
-                                            product.imageUrl!,
-                                            fit: BoxFit.cover,
-                                          )
-                                        : const Icon(
-                                            Icons.local_grocery_store_rounded,
-                                            size: 34,
-                                          ),
+                                    child: _buildProductImage(
+                                      url: product.imageUrl,
+                                      fit: BoxFit.cover,
+                                      fallbackIcon:
+                                          Icons.local_grocery_store_rounded,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -269,8 +311,14 @@ class _HeroCarouselState extends State<_HeroCarousel> {
 
 class _CategoryChipsRow extends StatelessWidget {
   final List<Category> categories;
+  final String? selectedCategoryId;
+  final void Function(String? categoryId) onCategorySelected;
 
-  const _CategoryChipsRow({required this.categories});
+  const _CategoryChipsRow({
+    required this.categories,
+    required this.selectedCategoryId,
+    required this.onCategorySelected,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -313,32 +361,49 @@ class _CategoryChipsRow extends StatelessWidget {
         separatorBuilder: (context, index) => const SizedBox(width: 12),
         itemBuilder: (context, index) {
           final category = prioritized[index];
-          return ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(999),
-                  color: Colors.white.withValues(alpha: 0.08),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.24),
+          final selected = category.id == selectedCategoryId;
+          return GestureDetector(
+            onTap: () {
+              onCategorySelected(selected ? null : category.id);
+            },
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 10,
                   ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.local_grocery_store_outlined, size: 16),
-                    const SizedBox(width: 8),
-                    Text(
-                      category.name,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(999),
+                    color: selected
+                        ? Colors.white.withValues(alpha: 0.18)
+                        : Colors.white.withValues(alpha: 0.08),
+                    border: Border.all(
+                      color: selected
+                          ? const Color(0xFF9AF2C8)
+                          : Colors.white.withValues(alpha: 0.24),
                     ),
-                  ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.local_grocery_store_outlined,
+                        size: 16,
+                        color: selected ? const Color(0xFF001814) : null,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        category.name,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: selected ? const Color(0xFF001814) : null,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -368,142 +433,134 @@ class _TrendingProductCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onOpenDetail,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(26),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(26),
-              color: Colors.white.withValues(alpha: 0.12),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.28)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.55),
-                  blurRadius: 32,
-                  offset: const Offset(0, 20),
-                ),
-              ],
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(26),
+          color: Colors.white.withValues(alpha: 0.10),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.45),
+              blurRadius: 18,
+              offset: const Offset(0, 12),
             ),
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Stack(
-                    children: [
-                      Align(
-                        alignment: Alignment.topRight,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(999),
-                            color: Colors.greenAccent.withValues(alpha: 0.22),
-                          ),
-                          child: const Text(
-                            '20% OFF',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Align(
-                        alignment: Alignment.center,
-                        child: Transform.translate(
-                          offset: const Offset(0, -4),
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                Container(
-                                  width: 80,
-                                  height: 80,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    gradient: const RadialGradient(
-                                      colors: [
-                                        Color(0xFF00FFC6),
-                                        Colors.transparent,
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                Container(
-                                  width: 90,
-                                  height: 90,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(24),
-                                    color: Colors.white.withValues(alpha: 0.06),
-                                  ),
-                                  clipBehavior: Clip.antiAlias,
-                                  child: product.imageUrl != null &&
-                                          product.imageUrl!.isNotEmpty
-                                      ? Image.network(
-                                          product.imageUrl!,
-                                          fit: BoxFit.contain,
-                                        )
-                                      : const Icon(
-                                          Icons.shopping_bag_outlined,
-                                          size: 34,
-                                        ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  product.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                if (product.category != null)
-                  Text(
-                    product.category!.name,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.white.withValues(alpha: 0.75),
-                    ),
-                  ),
-                const SizedBox(height: 4),
-                _DiscountPriceRow(product: product),
-                const SizedBox(height: 8),
-                Row(
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Stack(
                   children: [
-                    Expanded(
-                      child: Text(
-                        'In stock: ${product.stock}',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.white.withValues(alpha: 0.7),
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(999),
+                          color: Colors.greenAccent.withValues(alpha: 0.22),
+                        ),
+                        child: const Text(
+                          '20% OFF',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                     ),
-                    _MiniQuantityControls(
-                      quantity: quantity,
-                      canAdd: product.stock > 0,
-                      onAdd: onAdd,
-                      onRemove: onRemove,
+                    Align(
+                      alignment: Alignment.center,
+                      child: Transform.translate(
+                        offset: const Offset(0, -4),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Container(
+                                width: 80,
+                                height: 80,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: const RadialGradient(
+                                    colors: [
+                                      Color(0xFF00FFC6),
+                                      Colors.transparent,
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                width: 90,
+                                height: 90,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(24),
+                                  color: Colors.white.withValues(alpha: 0.06),
+                                ),
+                                clipBehavior: Clip.antiAlias,
+                                child: _buildProductImage(
+                                  url: product.imageUrl,
+                                  fit: BoxFit.contain,
+                                  fallbackIcon: Icons.shopping_bag_outlined,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                product.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              if (product.category != null)
+                Text(
+                  product.category!.name,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.white.withValues(alpha: 0.75),
+                  ),
+                ),
+              const SizedBox(height: 4),
+              _DiscountPriceRow(product: product),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      product.stock > 0 ? 'In stock' : 'Out of stock',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.white.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ),
+                  _MiniQuantityControls(
+                    quantity: quantity,
+                    canAdd: product.stock > 0,
+                    onAdd: onAdd,
+                    onRemove: onRemove,
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
@@ -563,6 +620,8 @@ class _BrowseTab extends StatelessWidget {
   final void Function(Product product) onRemove;
   final void Function(Product product) onOpenDetail;
   final Future<void> Function()? onRefresh;
+  final String? selectedCategoryId;
+  final void Function(String? categoryId) onCategorySelected;
 
   const _BrowseTab({
     required this.categories,
@@ -571,6 +630,8 @@ class _BrowseTab extends StatelessWidget {
     required this.onAdd,
     required this.onRemove,
     required this.onOpenDetail,
+    required this.selectedCategoryId,
+    required this.onCategorySelected,
     this.onRefresh,
   });
 
@@ -591,7 +652,11 @@ class _BrowseTab extends StatelessWidget {
                 if (hasProducts) _HeroCarousel(products: products),
                 const SizedBox(height: 24),
                 if (categories.isNotEmpty)
-                  _CategoryChipsRow(categories: categories),
+                  _CategoryChipsRow(
+                    categories: categories,
+                    selectedCategoryId: selectedCategoryId,
+                    onCategorySelected: onCategorySelected,
+                  ),
                 if (categories.isNotEmpty) const SizedBox(height: 24),
                 Text('Trending products', style: theme.textTheme.titleLarge),
                 const SizedBox(height: 12),
@@ -633,4 +698,3 @@ class _BrowseTab extends StatelessWidget {
     );
   }
 }
-

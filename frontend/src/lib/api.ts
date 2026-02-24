@@ -20,6 +20,7 @@ export type Product = {
   name: string;
   price: number;
   stock: number;
+  originalPrice?: number;
   category?: { _id: string; name: string } | string | null;
   description?: string;
   imageUrl?: string;
@@ -83,6 +84,7 @@ export const api = {
   productCreate: (payload: {
     name: string;
     price: number;
+    originalPrice?: number;
     stock: number;
     category?: string;
     description?: string;
@@ -95,6 +97,7 @@ export const api = {
     payload: {
       name: string;
       price: number;
+      originalPrice?: number;
       stock: number;
       category?: string;
       description?: string;
