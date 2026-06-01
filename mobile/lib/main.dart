@@ -99,8 +99,8 @@ class _MyAppState extends State<MyApp> {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF00C97B),
-          brightness: Brightness.dark,
+          seedColor: const Color(0xFF2196F3),
+          brightness: Brightness.light,
         ),
         useMaterial3: true,
       ),

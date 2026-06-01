@@ -1,12 +1,12 @@
 import 'dart:convert';
-import 'dart:ui';
 import 'dart:typed_data';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:glassmorphic_ui_kit/glassmorphic_ui_kit.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config.dart';
 import '../models.dart';
@@ -46,6 +46,29 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _selectedCategoryId;
   String? _deliveryAddress;
   bool _isResolvingLocation = false;
+  List<Product> _cachedFilteredProducts = [];
+
+  void _updateFilteredProducts() {
+    final query = _searchQuery.trim().toLowerCase();
+    _cachedFilteredProducts = _products.where((product) {
+      final matchesQuery = () {
+        if (query.isEmpty) {
+          return true;
+        }
+        final name = product.name.toLowerCase();
+        final categoryName = product.category?.name.toLowerCase() ?? '';
+        return name.contains(query) || categoryName.contains(query);
+      }();
+      final matchesCategory = () {
+        if (_selectedCategoryId == null) {
+          return true;
+        }
+        final id = product.category?.id;
+        return id != null && id == _selectedCategoryId;
+      }();
+      return matchesQuery && matchesCategory;
+    }).toList();
+  }
 
   String get _addressLabel {
     final value = _deliveryAddress?.trim();
@@ -58,7 +81,42 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadData();
+    _restoreCachedData().then((_) => _loadData());
+  }
+
+  Future<void> _restoreCachedData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final catsStr = prefs.getString('cached_categories');
+      final prodsStr = prefs.getString('cached_products');
+      if (catsStr != null || prodsStr != null) {
+        setState(() {
+          if (catsStr != null) {
+            final list = jsonDecode(catsStr) as List;
+            _categories = list
+                .whereType<Map<String, dynamic>>()
+                .map(Category.fromJson)
+                .toList();
+          }
+          if (prodsStr != null) {
+            final list = jsonDecode(prodsStr) as List;
+            _products = list
+                .whereType<Map<String, dynamic>>()
+                .map(Product.fromJson)
+                .toList();
+          }
+          _updateFilteredProducts();
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _cacheData(String categoriesJson, String productsJson) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('cached_categories', categoriesJson);
+      await prefs.setString('cached_products', productsJson);
+    } catch (_) {}
   }
 
   Future<void> _loadData() async {
@@ -68,15 +126,27 @@ class _HomeScreenState extends State<HomeScreen> {
     });
     try {
       final responses = await Future.wait([
-        http.get(Uri.parse('${Env.apiBaseUrl}/categories')),
-        http.get(Uri.parse('${Env.apiBaseUrl}/products')),
+        http.get(
+          Uri.parse('${Env.apiBaseUrl}/categories'),
+          headers: widget.token != null
+              ? {'Authorization': 'Bearer ${widget.token}'}
+              : null,
+        ),
+        http.get(
+          Uri.parse('${Env.apiBaseUrl}/products'),
+          headers: widget.token != null
+              ? {'Authorization': 'Bearer ${widget.token}'}
+              : null,
+        ),
       ]);
+      final catBody = responses[0].body;
+      final prodBody = responses[1].body;
       final categoriesJson =
-          jsonDecode(responses[0].body.isEmpty ? '{}' : responses[0].body)
-              as Map;
+          jsonDecode(catBody.isEmpty ? '{}' : catBody) as Map<String, dynamic>;
       final productsJson =
-          jsonDecode(responses[1].body.isEmpty ? '{}' : responses[1].body)
-              as Map;
+          jsonDecode(prodBody.isEmpty ? '{}' : prodBody)
+              as Map<String, dynamic>;
+
       if (responses[0].statusCode >= 200 &&
           responses[0].statusCode < 300 &&
           responses[1].statusCode >= 200 &&
@@ -96,7 +166,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     .map(Product.fromJson)
                     .toList()
               : <Product>[];
+          _updateFilteredProducts();
         });
+        _cacheData(
+          jsonEncode(categoriesList ?? []),
+          jsonEncode(productsList ?? []),
+        );
       } else {
         setState(() {
           _error =
@@ -179,6 +254,7 @@ class _HomeScreenState extends State<HomeScreen> {
       } else {
         _selectedCategoryId = categoryId;
       }
+      _updateFilteredProducts();
     });
   }
 
@@ -187,6 +263,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _searchQuery = '';
       _selectedCategoryId = category.id;
       _tabIndex = 2;
+      _updateFilteredProducts();
     });
   }
 
@@ -404,28 +481,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return total;
   }
 
-  List<Product> get _filteredProducts {
-    final query = _searchQuery.trim().toLowerCase();
-    return _products.where((product) {
-      final matchesQuery = () {
-        if (query.isEmpty) {
-          return true;
-        }
-        final name = product.name.toLowerCase();
-        final categoryName = product.category?.name.toLowerCase() ?? '';
-        return name.contains(query) || categoryName.contains(query);
-      }();
-      final matchesCategory = () {
-        if (_selectedCategoryId == null) {
-          return true;
-        }
-        final id = product.category?.id;
-        return id != null && id == _selectedCategoryId;
-      }();
-      return matchesQuery && matchesCategory;
-    }).toList();
-  }
-
   Future<void> _checkout() async {
     if (_cart.isEmpty) {
       return;
@@ -592,7 +647,7 @@ class _HomeScreenState extends State<HomeScreen> {
           key: const ValueKey('home_browse'),
           child: _BrowseTab(
             categories: _categories,
-            products: _filteredProducts,
+            products: _cachedFilteredProducts,
             cart: _cart,
             onAdd: _addToCart,
             onRemove: _removeFromCart,
@@ -624,40 +679,37 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: Colors.black,
-      extendBody: true,
+      backgroundColor: Colors.white,
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF001814), Color(0xFF004D3A), Color(0xFF00D29A)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
+        color: Colors.white,
         child: Stack(
           children: [
-            const _FloatingParticlesLayer(),
             SafeArea(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _LuxuryTopBar(
-                      userName: widget.user?.name,
-                      address: _addressLabel,
-                      isResolvingLocation: _isResolvingLocation,
-                      onAddressTap: _chooseAddress,
+                    RepaintBoundary(
+                      child: _LuxuryTopBar(
+                        userName: widget.user?.name,
+                        address: _addressLabel,
+                        isResolvingLocation: _isResolvingLocation,
+                        onAddressTap: _chooseAddress,
+                      ),
                     ),
                     const SizedBox(height: 20),
                     if (_tabIndex == 2)
-                      _GlowingSearchBar(
-                        placeholder: 'Search groceries, fruits, dairy...',
-                        onChanged: (value) {
-                          setState(() {
-                            _searchQuery = value;
-                          });
-                        },
+                      RepaintBoundary(
+                        child: _GlowingSearchBar(
+                          placeholder: 'Search groceries, fruits, dairy...',
+                          onChanged: (value) {
+                            setState(() {
+                              _searchQuery = value;
+                              _updateFilteredProducts();
+                            });
+                          },
+                        ),
                       ),
                     if (_tabIndex == 2) const SizedBox(height: 20),
                     Expanded(
@@ -665,51 +717,37 @@ class _HomeScreenState extends State<HomeScreen> {
                           ? const Center(child: CircularProgressIndicator())
                           : _error != null
                           ? Center(child: Text(_error!))
-                          : AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 260),
-                              switchInCurve: Curves.easeOutCubic,
-                              switchOutCurve: Curves.easeInCubic,
-                              transitionBuilder: (child, animation) {
-                                final offsetAnimation = Tween<Offset>(
-                                  begin: const Offset(0.08, 0),
-                                  end: Offset.zero,
-                                ).animate(animation);
-                                return FadeTransition(
-                                  opacity: animation,
-                                  child: SlideTransition(
-                                    position: offsetAnimation,
-                                    child: child,
-                                  ),
-                                );
-                              },
-                              child: _buildTabBody(),
-                            ),
+                          : _buildTabBody(),
                     ),
-                    const SizedBox(height: 96),
                   ],
                 ),
               ),
             ),
             Positioned(
               right: 32,
-              bottom: 120,
-              child: _FloatingCartButton(
-                itemCount: _cartCount,
-                isActive: _tabIndex == 1,
-                onTap: () {
-                  _changeTab(1);
-                },
+              bottom: 32,
+              child: RepaintBoundary(
+                child: _FloatingCartButton(
+                  itemCount: _cartCount,
+                  isActive: _tabIndex == 1,
+                  onTap: () {
+                    _changeTab(1);
+                  },
+                ),
               ),
             ),
           ],
         ),
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 26),
-        child: _GlassNavBar(
-          currentIndex: _tabIndex,
-          onTabSelected: _changeTab,
-          activeColor: theme.colorScheme.primary,
+      bottomNavigationBar: Container(
+        color: Colors.white,
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        child: RepaintBoundary(
+          child: _GlassNavBar(
+            currentIndex: _tabIndex,
+            onTabSelected: _changeTab,
+            activeColor: theme.colorScheme.primary,
+          ),
         ),
       ),
     );

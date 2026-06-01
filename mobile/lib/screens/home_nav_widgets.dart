@@ -9,12 +9,17 @@ class _CategoriesTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (categories.isEmpty) {
-      return const Center(child: Text('No categories available'));
+      return const Center(
+        child: Text(
+          'No categories available',
+          style: TextStyle(color: Colors.black54),
+        ),
+      );
     }
     return GridView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-      physics: const BouncingScrollPhysics(),
       itemCount: categories.length,
+      cacheExtent: 500,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         mainAxisSpacing: 16,
@@ -23,60 +28,63 @@ class _CategoriesTab extends StatelessWidget {
       ),
       itemBuilder: (context, index) {
         final category = categories[index];
-        return GestureDetector(
+        return _CategoryItem(
+          category: category,
           onTap: () => onCategoryTap(category),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(24),
-                  color: Colors.white.withValues(alpha: 0.1),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.22),
-                  ),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [Color(0xFF2AF598), Color(0xFF00E4FF)],
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.local_grocery_store_outlined,
-                        size: 18,
-                        color: Colors.black,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        category.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
+        );
+      },
+    );
+  }
+}
+
+class _CategoryItem extends StatelessWidget {
+  final Category category;
+  final VoidCallback onTap;
+
+  const _CategoryItem({required this.category, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          color: Colors.blue.withValues(alpha: 0.05),
+          border: Border.all(color: Colors.blue.withValues(alpha: 0.1)),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(0xFF2196F3),
+              ),
+              child: const Icon(
+                Icons.local_grocery_store_outlined,
+                size: 18,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                category.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1A237E),
                 ),
               ),
             ),
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 }
@@ -95,52 +103,53 @@ class _ProfileTab extends StatelessWidget {
         : 'Guest shopper';
     final email = user?.email ?? '';
     return Center(
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-          child: Container(
-            width: 380,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(28),
-              color: Colors.white.withValues(alpha: 0.1),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.26)),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircleAvatar(
-                  radius: 32,
-                  backgroundColor: Colors.white.withValues(alpha: 0.18),
-                  child: Text(
-                    name.isNotEmpty ? name.characters.first.toUpperCase() : '?',
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+      child: Container(
+        width: 380,
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(28),
+          color: Colors.blue.withValues(alpha: 0.05),
+          border: Border.all(color: Colors.blue.withValues(alpha: 0.1)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircleAvatar(
+              radius: 32,
+              backgroundColor: const Color(0xFF2196F3).withValues(alpha: 0.1),
+              child: Text(
+                name.isNotEmpty ? name.characters.first.toUpperCase() : '?',
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A237E),
                 ),
-                const SizedBox(height: 16),
-                Text(name, style: theme.textTheme.titleMedium),
-                if (email.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    email,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.7),
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 24),
-                FilledButton.icon(
-                  onPressed: onLogout,
-                  icon: const Icon(Icons.logout_rounded),
-                  label: const Text('Sign out'),
-                ),
-              ],
+              ),
             ),
-          ),
+            const SizedBox(height: 16),
+            Text(
+              name,
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: const Color(0xFF1A237E),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            if (email.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                email,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: Colors.black.withValues(alpha: 0.6),
+                ),
+              ),
+            ],
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: onLogout,
+              icon: const Icon(Icons.logout_rounded),
+              label: const Text('Sign out'),
+            ),
+          ],
         ),
       ),
     );
@@ -176,114 +185,100 @@ class _LuxuryTopBar extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-              child: GestureDetector(
-                onTap: onAddressTap,
-                behavior: HitTestBehavior.opaque,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(999),
-                    color: Colors.white.withValues(alpha: 0.08),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.28),
+          child: GestureDetector(
+            onTap: onAddressTap,
+            behavior: HitTestBehavior.opaque,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(999),
+                color: Colors.blue.withValues(alpha: 0.05),
+                border: Border.all(color: Colors.blue.withValues(alpha: 0.1)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Color(0xFF2196F3),
+                    ),
+                    child: const Icon(
+                      Icons.place_outlined,
+                      size: 18,
+                      color: Colors.white,
                     ),
                   ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: LinearGradient(
-                            colors: [Color(0xFF2AF598), Color(0xFF00E4FF)],
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          greetingName,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: Colors.black.withValues(alpha: 0.6),
+                            letterSpacing: 0.3,
                           ),
                         ),
-                        child: const Icon(
-                          Icons.place_outlined,
-                          size: 18,
-                          color: Colors.black,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        const SizedBox(height: 2),
+                        Row(
                           children: [
-                            Text(
-                              greetingName,
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.8),
-                                letterSpacing: 0.3,
+                            Expanded(
+                              child: Text(
+                                address,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF1A237E),
+                                ),
                               ),
                             ),
-                            const SizedBox(height: 2),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    address,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                trailing,
-                              ],
-                            ),
+                            const SizedBox(width: 4),
+                            trailing,
                           ],
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(18),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-            child: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(18),
-                color: Colors.white.withValues(alpha: 0.08),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.28)),
-              ),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  const Icon(Icons.notifications_none_rounded, size: 22),
-                  Positioned(
-                    top: 10,
-                    right: 12,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.redAccent,
-                      ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            color: Colors.blue.withValues(alpha: 0.05),
+            border: Border.all(color: Colors.blue.withValues(alpha: 0.1)),
+          ),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              const Icon(
+                Icons.notifications_none_rounded,
+                size: 22,
+                color: Color(0xFF1A237E),
+              ),
+              Positioned(
+                top: 10,
+                right: 12,
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.redAccent,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -299,61 +294,46 @@ class _GlowingSearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(32),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-        child: Container(
-          height: 56,
-          padding: const EdgeInsets.symmetric(horizontal: 18),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(32),
-            color: Colors.white.withValues(alpha: 0.08),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.55),
-                blurRadius: 32,
-                offset: const Offset(0, 20),
+    return Container(
+      height: 56,
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(32),
+        color: Colors.blue.withValues(alpha: 0.04),
+        border: Border.all(color: Colors.blue.withValues(alpha: 0.1)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.search_rounded, size: 22, color: Color(0xFF1A237E)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: TextField(
+              onChanged: onChanged,
+              style: const TextStyle(fontSize: 14, color: Color(0xFF1A237E)),
+              decoration: InputDecoration(
+                hintText: placeholder,
+                border: InputBorder.none,
+                hintStyle: TextStyle(
+                  color: Colors.black.withValues(alpha: 0.4),
+                  fontSize: 14,
+                ),
               ),
-            ],
+            ),
           ),
-          child: Row(
-            children: [
-              const Icon(Icons.search_rounded, size: 22),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextField(
-                  onChanged: onChanged,
-                  style: const TextStyle(fontSize: 14),
-                  decoration: InputDecoration(
-                    hintText: placeholder,
-                    border: InputBorder.none,
-                    hintStyle: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7),
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ),
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(999),
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF2AF598), Color(0xFF00E4FF)],
-                  ),
-                ),
-                child: const Icon(
-                  Icons.tune_rounded,
-                  size: 18,
-                  color: Colors.black,
-                ),
-              ),
-            ],
+          Container(
+            width: 32,
+            height: 32,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: Color(0xFF2196F3),
+            ),
+            child: const Icon(
+              Icons.tune_rounded,
+              size: 18,
+              color: Colors.white,
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -369,42 +349,46 @@ class _GlassNavBar extends StatelessWidget {
     required this.onTabSelected,
     required this.activeColor,
   });
+
+  static const List<_NavItemData> _items = [
+    _NavItemData(Icons.grid_view_rounded, 'Categories'),
+    _NavItemData(Icons.shopping_cart_rounded, 'Cart'),
+    _NavItemData(Icons.home_rounded, 'Home'),
+    _NavItemData(Icons.receipt_long_rounded, 'Orders'),
+    _NavItemData(Icons.person_rounded, 'Profile'),
+  ];
+
   @override
   Widget build(BuildContext context) {
-    const items = [
-      _NavItemData(Icons.grid_view_rounded, 'Categories'),
-      _NavItemData(Icons.shopping_cart_rounded, 'Cart'),
-      _NavItemData(Icons.home_rounded, 'Home'),
-      _NavItemData(Icons.receipt_long_rounded, 'Orders'),
-      _NavItemData(Icons.person_rounded, 'Profile'),
-    ];
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(40),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-        child: Container(
-          height: 78,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(40),
-            color: Colors.white.withValues(alpha: 0.08),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.26)),
+    return Container(
+      height: 78,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(40),
+        color: Colors.white,
+        border: Border.all(color: Colors.blue.withValues(alpha: 0.1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, -4),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: List.generate(items.length, (index) {
-              final item = items[index];
-              final selected = index == currentIndex;
-              return _GlassNavItem(
-                icon: item.icon,
-                label: item.label,
-                selected: selected,
-                activeColor: activeColor,
-                onTap: () => onTabSelected(index),
-              );
-            }),
-          ),
-        ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: List.generate(_items.length, (index) {
+          final item = _items[index];
+          final selected = index == currentIndex;
+          return _GlassNavItem(
+            key: ValueKey(item.label),
+            icon: item.icon,
+            label: item.label,
+            selected: selected,
+            activeColor: activeColor,
+            onTap: () => onTabSelected(index),
+          );
+        }),
       ),
     );
   }
@@ -425,6 +409,7 @@ class _GlassNavItem extends StatelessWidget {
   final VoidCallback onTap;
 
   const _GlassNavItem({
+    super.key,
     required this.icon,
     required this.label,
     required this.selected,
@@ -434,43 +419,31 @@ class _GlassNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? activeColor : Colors.white.withValues(alpha: 0.8);
+    final color = selected ? activeColor : Colors.black.withValues(alpha: 0.4);
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
         behavior: HitTestBehavior.opaque,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 260),
-          curve: Curves.easeOutCubic,
+        child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(999),
             color: selected
-                ? Colors.white.withValues(alpha: 0.16)
+                ? Colors.blue.withValues(alpha: 0.08)
                 : Colors.transparent,
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              TweenAnimationBuilder<double>(
-                tween: Tween<double>(begin: 1, end: selected ? 1.1 : 1),
-                duration: const Duration(milliseconds: 260),
-                curve: Curves.easeOutBack,
-                builder: (context, scale, child) {
-                  return Transform.scale(scale: scale, child: child);
-                },
-                child: Icon(icon, size: 22, color: color),
-              ),
+              Icon(icon, size: 22, color: color),
               const SizedBox(height: 4),
-              AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 260),
-                curve: Curves.easeOutCubic,
+              Text(
+                label,
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
                   color: color,
                 ),
-                child: Text(label),
               ),
             ],
           ),
@@ -493,111 +466,50 @@ class _FloatingCartButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween<double>(begin: 1, end: isActive ? 1.08 : 1),
-      duration: const Duration(milliseconds: 500),
-      curve: Curves.easeInOut,
-      builder: (context, scale, child) {
-        return Transform.scale(scale: scale, child: child);
-      },
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: 64,
-          height: 64,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: const LinearGradient(
-              colors: [Color(0xFF2AF598), Color(0xFF00E4FF)],
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 64,
+        height: 64,
+        decoration: const BoxDecoration(
+          shape: BoxShape.circle,
+          color: Color(0xFF2196F3),
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            const Icon(
+              Icons.shopping_bag_rounded,
+              size: 26,
+              color: Colors.white,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF2AF598).withValues(alpha: 0.7),
-                blurRadius: 26,
-                spreadRadius: 2,
-              ),
-            ],
-          ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              const Icon(
-                Icons.shopping_bag_rounded,
-                size: 26,
-                color: Colors.black,
-              ),
-              if (itemCount > 0)
-                Positioned(
-                  top: 10,
-                  right: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.redAccent,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      itemCount.toString(),
-                      style: const TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+            if (itemCount > 0)
+              Positioned(
+                top: 10,
+                right: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    itemCount.toString(),
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
                 ),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );
-  }
-}
-
-class _FloatingParticlesLayer extends StatelessWidget {
-  const _FloatingParticlesLayer();
-
-  @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    const baseOffsets = [
-      Offset(0.15, 0.2),
-      Offset(0.8, 0.25),
-      Offset(0.3, 0.6),
-      Offset(0.7, 0.7),
-      Offset(0.5, 0.4),
-    ];
-    final dots = <Widget>[];
-    for (var i = 0; i < baseOffsets.length; i++) {
-      final base = baseOffsets[i];
-      final dx = base.dx * size.width;
-      final dy = base.dy * size.height;
-      dots.add(
-        Positioned(
-          left: dx,
-          top: dy,
-          child: Container(
-            width: 3.5 + i.toDouble(),
-            height: 3.5 + i.toDouble(),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withValues(alpha: 0.24),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.white.withValues(alpha: 0.22),
-                  blurRadius: 12,
-                  spreadRadius: 1,
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-    return IgnorePointer(child: Stack(children: dots));
   }
 }
 
@@ -641,6 +553,7 @@ class _CartTab extends StatelessWidget {
                     vertical: 12,
                   ),
                   itemCount: items.length,
+                  cacheExtent: 500,
                   itemBuilder: (context, index) {
                     final product = items[index].key;
                     final quantity = items[index].value;
@@ -673,9 +586,9 @@ class _CartTab extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.2),
+            color: Colors.blue.withValues(alpha: 0.03),
             border: Border(
-              top: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+              top: BorderSide(color: Colors.blue.withValues(alpha: 0.1)),
             ),
           ),
           child: Row(
@@ -684,13 +597,17 @@ class _CartTab extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Total', style: TextStyle(fontSize: 13)),
+                    const Text(
+                      'Total',
+                      style: TextStyle(fontSize: 13, color: Colors.black54),
+                    ),
                     const SizedBox(height: 4),
                     Text(
                       '₹${total.toStringAsFixed(2)}',
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
+                        color: Color(0xFF1A237E),
                       ),
                     ),
                   ],
@@ -733,6 +650,7 @@ class _OrdersTab extends StatelessWidget {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: orders.length,
+      cacheExtent: 500,
       itemBuilder: (context, index) {
         final order = orders[index];
         return Card(
@@ -760,7 +678,7 @@ class _OrdersTab extends StatelessWidget {
                   '${order.status.toUpperCase()} • ${order.paymentStatus.toUpperCase()}',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.white.withValues(alpha: 0.7),
+                    color: Colors.black.withValues(alpha: 0.5),
                   ),
                 ),
                 const SizedBox(height: 8),

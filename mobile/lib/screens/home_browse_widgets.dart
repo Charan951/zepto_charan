@@ -2,51 +2,63 @@ part of 'home_screen.dart';
 
 final Map<String, Uint8List> _inlineImageCache = {};
 
-Widget _buildProductImage({
-  required String? url,
-  required IconData fallbackIcon,
-  BoxFit fit = BoxFit.contain,
-}) {
-  if (url == null || url.isEmpty) {
-    return Icon(fallbackIcon, size: 34);
-  }
-  if (url.startsWith('data:image')) {
-    final cached = _inlineImageCache[url];
-    if (cached != null) {
-      return Image.memory(
-        cached,
-        fit: fit,
-        filterQuality: FilterQuality.medium,
-        gaplessPlayback: true,
-      );
+class _ProductImage extends StatelessWidget {
+  final String? url;
+  final IconData fallbackIcon;
+  final BoxFit fit;
+
+  const _ProductImage({
+    required this.url,
+    required this.fallbackIcon,
+    this.fit = BoxFit.contain,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final currentUrl = url;
+    if (currentUrl == null || currentUrl.isEmpty) {
+      return Icon(fallbackIcon, size: 34);
     }
-    final commaIndex = url.indexOf(',');
-    if (commaIndex != -1 && commaIndex + 1 < url.length) {
-      final base64Part = url.substring(commaIndex + 1);
-      try {
-        final bytes = base64Decode(base64Part);
-        _inlineImageCache[url] = bytes;
+    if (currentUrl.startsWith('data:image')) {
+      final cached = _inlineImageCache[currentUrl];
+      if (cached != null) {
         return Image.memory(
-          bytes,
+          cached,
           fit: fit,
-          filterQuality: FilterQuality.medium,
+          filterQuality: FilterQuality.low,
           gaplessPlayback: true,
         );
-      } catch (_) {
-        return Icon(fallbackIcon, size: 34);
       }
-    }
-    return Icon(fallbackIcon, size: 34);
-  }
-  return Image.network(
-    url,
-    fit: fit,
-    filterQuality: FilterQuality.medium,
-    gaplessPlayback: true,
-    errorBuilder: (context, error, stackTrace) {
+      final commaIndex = currentUrl.indexOf(',');
+      if (commaIndex != -1 && commaIndex + 1 < currentUrl.length) {
+        final base64Part = currentUrl.substring(commaIndex + 1);
+        try {
+          final bytes = base64Decode(base64Part);
+          _inlineImageCache[currentUrl] = bytes;
+          return Image.memory(
+            bytes,
+            fit: fit,
+            filterQuality: FilterQuality.low,
+            gaplessPlayback: true,
+          );
+        } catch (_) {
+          return Icon(fallbackIcon, size: 34);
+        }
+      }
       return Icon(fallbackIcon, size: 34);
-    },
-  );
+    }
+    return Image.network(
+      currentUrl,
+      fit: fit,
+      filterQuality: FilterQuality.low,
+      cacheWidth: 150, // More precise for 90x90 display
+      cacheHeight: 150,
+      gaplessPlayback: true,
+      errorBuilder: (context, error, stackTrace) {
+        return Icon(fallbackIcon, size: 34);
+      },
+    );
+  }
 }
 
 class _DiscountBadge extends StatelessWidget {
@@ -73,11 +85,18 @@ class _DiscountBadge extends StatelessWidget {
     final label = discount != null
         ? '${discount.round()}% OFF'
         : 'Limited offer';
-    return Text(
-      label,
-      style: theme.textTheme.labelMedium?.copyWith(
-        fontWeight: FontWeight.w700,
-        color: Colors.white,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(999),
+        color: const Color(0xFF2196F3),
+      ),
+      child: Text(
+        label,
+        style: theme.textTheme.labelMedium?.copyWith(
+          fontWeight: FontWeight.w700,
+          color: Colors.white,
+        ),
       ),
     );
   }
@@ -110,7 +129,7 @@ class _DiscountPriceRow extends StatelessWidget {
           style: TextStyle(
             fontSize: 12,
             decoration: TextDecoration.lineThrough,
-            color: Colors.white.withValues(alpha: 0.6),
+            color: Colors.black.withValues(alpha: 0.4),
           ),
         ),
         const SizedBox(width: 4),
@@ -119,7 +138,7 @@ class _DiscountPriceRow extends StatelessWidget {
           style: const TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
-            color: Colors.lightGreenAccent,
+            color: Colors.blueAccent,
           ),
         ),
       ],
@@ -158,42 +177,23 @@ class _HeroCarouselState extends State<_HeroCarousel> {
     if (items.isEmpty) {
       return const SizedBox.shrink();
     }
-    return SizedBox(
-      height: 190,
-      child: PageView.builder(
-        controller: _controller,
-        physics: const BouncingScrollPhysics(),
-        itemCount: items.length,
-        itemBuilder: (context, index) {
-          final product = items[index];
-          return AnimatedBuilder(
-            animation: _controller,
-            builder: (context, child) {
-              double page = 0;
-              if (_controller.hasClients && _controller.position.hasPixels) {
-                page = _controller.page ?? _controller.initialPage.toDouble();
-              }
-              final distance = (page - index).abs().clamp(0.0, 1.0);
-              final scale = 1 - distance * 0.08;
-              final offsetY = 12 * distance;
-              return Transform.translate(
-                offset: Offset(0, offsetY),
-                child: Transform.scale(scale: scale, child: child),
-              );
-            },
-            child: GlassContainer(
+    return RepaintBoundary(
+      child: SizedBox(
+        height: 190,
+        child: PageView.builder(
+          controller: _controller,
+          itemCount: items.length,
+          itemBuilder: (context, index) {
+            final product = items[index];
+            return Container(
               width: double.infinity,
               height: 190,
-              blur: 20,
-              borderRadius: BorderRadius.circular(28),
+              margin: const EdgeInsets.symmetric(horizontal: 8),
               padding: const EdgeInsets.all(18),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white.withAlpha(40),
-                  Colors.white.withAlpha(14),
-                ],
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5F9FF),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: Colors.blue.withValues(alpha: 0.1)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -207,7 +207,7 @@ class _HeroCarouselState extends State<_HeroCarousel> {
                         ),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(999),
-                          color: Colors.redAccent.withValues(alpha: 0.16),
+                          color: Colors.redAccent.withValues(alpha: 0.1),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -215,13 +215,14 @@ class _HeroCarouselState extends State<_HeroCarousel> {
                             const Icon(
                               Icons.bolt_rounded,
                               size: 14,
-                              color: Colors.orangeAccent,
+                              color: Colors.redAccent,
                             ),
                             const SizedBox(width: 4),
                             Text(
                               'Flash offer',
                               style: theme.textTheme.labelSmall?.copyWith(
                                 fontWeight: FontWeight.w600,
+                                color: Colors.redAccent,
                               ),
                             ),
                           ],
@@ -246,6 +247,7 @@ class _HeroCarouselState extends State<_HeroCarousel> {
                                 overflow: TextOverflow.ellipsis,
                                 style: theme.textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF1A237E),
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -266,30 +268,33 @@ class _HeroCarouselState extends State<_HeroCarousel> {
                                   height: 18,
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(999),
-                                    color: Colors.black.withValues(alpha: 0.25),
+                                    color: Colors.black.withValues(alpha: 0.05),
                                   ),
                                 ),
                               ),
                               Align(
                                 alignment: Alignment.center,
-                                child: Transform.rotate(
-                                  angle: -0.18,
-                                  child: Container(
-                                    width: 80,
-                                    height: 80,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(24),
-                                      color: Colors.white.withValues(
-                                        alpha: 0.08,
+                                child: Container(
+                                  width: 80,
+                                  height: 80,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(24),
+                                    color: Colors.white,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.05,
+                                        ),
+                                        blurRadius: 10,
                                       ),
-                                    ),
-                                    clipBehavior: Clip.antiAlias,
-                                    child: _buildProductImage(
-                                      url: product.imageUrl,
-                                      fit: BoxFit.cover,
-                                      fallbackIcon:
-                                          Icons.local_grocery_store_rounded,
-                                    ),
+                                    ],
+                                  ),
+                                  clipBehavior: Clip.hardEdge,
+                                  child: _ProductImage(
+                                    url: product.imageUrl,
+                                    fit: BoxFit.cover,
+                                    fallbackIcon:
+                                        Icons.local_grocery_store_rounded,
                                   ),
                                 ),
                               ),
@@ -301,15 +306,15 @@ class _HeroCarouselState extends State<_HeroCarousel> {
                   ),
                 ],
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
 }
 
-class _CategoryChipsRow extends StatelessWidget {
+class _CategoryChipsRow extends StatefulWidget {
   final List<Category> categories;
   final String? selectedCategoryId;
   final void Function(String? categoryId) onCategorySelected;
@@ -321,9 +326,30 @@ class _CategoryChipsRow extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    if (categories.isEmpty) {
-      return const SizedBox.shrink();
+  State<_CategoryChipsRow> createState() => _CategoryChipsRowState();
+}
+
+class _CategoryChipsRowState extends State<_CategoryChipsRow> {
+  List<Category> _prioritizedCategories = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _updatePrioritizedCategories();
+  }
+
+  @override
+  void didUpdateWidget(_CategoryChipsRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.categories != oldWidget.categories) {
+      _updatePrioritizedCategories();
+    }
+  }
+
+  void _updatePrioritizedCategories() {
+    if (widget.categories.isEmpty) {
+      _prioritizedCategories = [];
+      return;
     }
     const featuredNames = <String>[
       'Groceries',
@@ -334,7 +360,7 @@ class _CategoryChipsRow extends StatelessWidget {
       'Personal Care',
     ];
     final normalized = <String, Category>{};
-    for (final category in categories) {
+    for (final category in widget.categories) {
       normalized[category.name.toLowerCase()] = category;
     }
     final prioritized = <Category>[];
@@ -346,69 +372,110 @@ class _CategoryChipsRow extends StatelessWidget {
         usedIds.add(match.id);
       }
     }
-    for (final category in categories) {
+    for (final category in widget.categories) {
       if (!usedIds.contains(category.id)) {
         prioritized.add(category);
         usedIds.add(category.id);
       }
     }
+    _prioritizedCategories = prioritized;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_prioritizedCategories.isEmpty) {
+      return const SizedBox.shrink();
+    }
     return SizedBox(
       height: 56,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        itemCount: prioritized.length,
+        itemCount: _prioritizedCategories.length,
         separatorBuilder: (context, index) => const SizedBox(width: 12),
         itemBuilder: (context, index) {
-          final category = prioritized[index];
-          final selected = category.id == selectedCategoryId;
-          return GestureDetector(
-            onTap: () {
-              onCategorySelected(selected ? null : category.id);
-            },
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(999),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(999),
-                    color: selected
-                        ? Colors.white.withValues(alpha: 0.18)
-                        : Colors.white.withValues(alpha: 0.08),
-                    border: Border.all(
-                      color: selected
-                          ? const Color(0xFF9AF2C8)
-                          : Colors.white.withValues(alpha: 0.24),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.local_grocery_store_outlined,
-                        size: 16,
-                        color: selected ? const Color(0xFF001814) : null,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        category.name,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: selected ? const Color(0xFF001814) : null,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+          final category = _prioritizedCategories[index];
+          final selected = category.id == widget.selectedCategoryId;
+          return _CategoryChip(
+            category: category,
+            selected: selected,
+            onTap: () =>
+                widget.onCategorySelected(selected ? null : category.id),
           );
         },
+      ),
+    );
+  }
+}
+
+class _CategoryChip extends StatelessWidget {
+  final Category category;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _CategoryChip({
+    required this.category,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(999),
+          color: selected
+              ? const Color(0xFF2196F3)
+              : Colors.blue.withValues(alpha: 0.05),
+          border: Border.all(
+            color: selected
+                ? const Color(0xFF2196F3)
+                : Colors.blue.withValues(alpha: 0.1),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.local_grocery_store_outlined,
+              size: 16,
+              color: selected ? Colors.white : const Color(0xFF1A237E),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              category.name,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: selected ? Colors.white : const Color(0xFF1A237E),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TrendingDiscountBadge extends StatelessWidget {
+  const _TrendingDiscountBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(999),
+        color: const Color(0xFF2196F3).withValues(alpha: 0.1),
+      ),
+      child: const Text(
+        '20% OFF',
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: Color(0xFF2196F3),
+        ),
       ),
     );
   }
@@ -422,6 +489,7 @@ class _TrendingProductCard extends StatelessWidget {
   final VoidCallback onOpenDetail;
 
   const _TrendingProductCard({
+    super.key,
     required this.product,
     required this.quantity,
     required this.onAdd,
@@ -435,18 +503,11 @@ class _TrendingProductCard extends StatelessWidget {
       onTap: onOpenDetail,
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(26),
-          color: Colors.white.withValues(alpha: 0.10),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.45),
-              blurRadius: 18,
-              offset: const Offset(0, 12),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(20),
+          color: Colors.white,
+          border: Border.all(color: Colors.blue.withValues(alpha: 0.1)),
         ),
-        clipBehavior: Clip.antiAlias,
+        clipBehavior: Clip.hardEdge,
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Column(
@@ -454,67 +515,26 @@ class _TrendingProductCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Stack(
+                  alignment: Alignment.center,
                   children: [
-                    Align(
-                      alignment: Alignment.topRight,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(999),
-                          color: Colors.greenAccent.withValues(alpha: 0.22),
-                        ),
-                        child: const Text(
-                          '20% OFF',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
+                    Container(
+                      width: 90,
+                      height: 90,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(24),
+                        color: Colors.blue.withValues(alpha: 0.05),
+                      ),
+                      clipBehavior: Clip.hardEdge,
+                      child: _ProductImage(
+                        url: product.imageUrl,
+                        fit: BoxFit.contain,
+                        fallbackIcon: Icons.shopping_bag_outlined,
                       ),
                     ),
-                    Align(
-                      alignment: Alignment.center,
-                      child: Transform.translate(
-                        offset: const Offset(0, -4),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              Container(
-                                width: 80,
-                                height: 80,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  gradient: const RadialGradient(
-                                    colors: [
-                                      Color(0xFF00FFC6),
-                                      Colors.transparent,
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                width: 90,
-                                height: 90,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(24),
-                                  color: Colors.white.withValues(alpha: 0.06),
-                                ),
-                                clipBehavior: Clip.antiAlias,
-                                child: _buildProductImage(
-                                  url: product.imageUrl,
-                                  fit: BoxFit.contain,
-                                  fallbackIcon: Icons.shopping_bag_outlined,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                    const Positioned(
+                      top: 0,
+                      right: 0,
+                      child: _TrendingDiscountBadge(),
                     ),
                   ],
                 ),
@@ -527,6 +547,7 @@ class _TrendingProductCard extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
+                  color: Color(0xFF1A237E),
                 ),
               ),
               const SizedBox(height: 4),
@@ -535,7 +556,7 @@ class _TrendingProductCard extends StatelessWidget {
                   product.category!.name,
                   style: TextStyle(
                     fontSize: 11,
-                    color: Colors.white.withValues(alpha: 0.75),
+                    color: Colors.black.withValues(alpha: 0.5),
                   ),
                 ),
               const SizedBox(height: 4),
@@ -548,7 +569,9 @@ class _TrendingProductCard extends StatelessWidget {
                       product.stock > 0 ? 'In stock' : 'Out of stock',
                       style: TextStyle(
                         fontSize: 11,
-                        color: Colors.white.withValues(alpha: 0.7),
+                        color: product.stock > 0
+                            ? Colors.black.withValues(alpha: 0.5)
+                            : Colors.redAccent,
                       ),
                     ),
                   ),
@@ -593,19 +616,11 @@ class _MiniQuantityControls extends StatelessWidget {
             padding: EdgeInsets.zero,
             icon: const Icon(Icons.remove_circle_outline),
           ),
-        TweenAnimationBuilder<double>(
-          tween: Tween<double>(begin: 1, end: canAdd ? 1.05 : 1),
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
-          builder: (context, scale, child) {
-            return Transform.scale(scale: scale, child: child);
-          },
-          child: IconButton(
-            onPressed: canAdd ? onAdd : null,
-            iconSize: 22,
-            padding: EdgeInsets.zero,
-            icon: const Icon(Icons.add_circle_rounded),
-          ),
+        IconButton(
+          onPressed: canAdd ? onAdd : null,
+          iconSize: 22,
+          padding: EdgeInsets.zero,
+          icon: const Icon(Icons.add_circle_rounded),
         ),
       ],
     );
@@ -643,7 +658,7 @@ class _BrowseTab extends StatelessWidget {
       onRefresh: onRefresh ?? () async {},
       edgeOffset: 0,
       child: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
+        cacheExtent: 1000, // Pre-build items for smoother scrolling
         slivers: [
           SliverToBoxAdapter(
             child: Column(
@@ -652,10 +667,12 @@ class _BrowseTab extends StatelessWidget {
                 if (hasProducts) _HeroCarousel(products: products),
                 const SizedBox(height: 24),
                 if (categories.isNotEmpty)
-                  _CategoryChipsRow(
-                    categories: categories,
-                    selectedCategoryId: selectedCategoryId,
-                    onCategorySelected: onCategorySelected,
+                  RepaintBoundary(
+                    child: _CategoryChipsRow(
+                      categories: categories,
+                      selectedCategoryId: selectedCategoryId,
+                      onCategorySelected: onCategorySelected,
+                    ),
                   ),
                 if (categories.isNotEmpty) const SizedBox(height: 24),
                 Text('Trending products', style: theme.textTheme.titleLarge),
@@ -678,6 +695,7 @@ class _BrowseTab extends StatelessWidget {
                   final product = products[index];
                   final quantity = cart[product.id] ?? 0;
                   return _TrendingProductCard(
+                    key: ValueKey(product.id),
                     product: product,
                     quantity: quantity,
                     onAdd: () => onAdd(product),

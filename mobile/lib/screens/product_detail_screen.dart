@@ -180,14 +180,23 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         ? (((original - product.price) / original) * 100).round()
         : null;
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
         leading: IconButton(
           onPressed: () {
             Navigator.of(context).pop();
           },
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF1A237E)),
         ),
-        title: const Text('Product'),
+        title: const Text(
+          'Product',
+          style: TextStyle(
+            color: Color(0xFF1A237E),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
       body: _error != null && product.name.isEmpty
           ? Center(child: Text(_error!))
@@ -201,9 +210,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   Container(
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(24),
-                      color: Colors.white.withValues(alpha: 0.04),
+                      color: Colors.blue.withValues(alpha: 0.03),
                       border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.12),
+                        color: Colors.blue.withValues(alpha: 0.1),
                       ),
                     ),
                     clipBehavior: Clip.antiAlias,
@@ -220,7 +229,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
-                        color: Color(0xFF9AF2C8),
+                        color: Color(0xFF2196F3),
                       ),
                     ),
                   const SizedBox(height: 4),
@@ -229,6 +238,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w700,
+                      color: Color(0xFF1A237E),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -236,7 +246,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       product.description!.isNotEmpty)
                     Text(
                       product.description!,
-                      style: const TextStyle(fontSize: 14, height: 1.4),
+                      style: TextStyle(
+                        fontSize: 14,
+                        height: 1.4,
+                        color: Colors.black.withValues(alpha: 0.7),
+                      ),
                     ),
                   const SizedBox(height: 16),
                   Row(
@@ -245,7 +259,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Price', style: TextStyle(fontSize: 13)),
+                          const Text(
+                            'Price',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.black54,
+                            ),
+                          ),
                           const SizedBox(height: 4),
                           Row(
                             children: [
@@ -254,21 +274,19 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 style: const TextStyle(
                                   fontSize: 22,
                                   fontWeight: FontWeight.w700,
+                                  color: Color(0xFF1A237E),
                                 ),
                               ),
                               if (hasDiscount) ...[
                                 const SizedBox(width: 8),
-                                if (original != null)
-                                  Text(
-                                    '₹${original.toStringAsFixed(2)}',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      decoration: TextDecoration.lineThrough,
-                                      color: Colors.white.withValues(
-                                        alpha: 0.6,
-                                      ),
-                                    ),
+                                Text(
+                                  '₹${original.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    decoration: TextDecoration.lineThrough,
+                                    color: Colors.black.withValues(alpha: 0.4),
                                   ),
+                                ),
                                 if (discountPercent != null) ...[
                                   const SizedBox(width: 6),
                                   Container(
@@ -277,7 +295,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                       vertical: 4,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF22C55E),
+                                      color: const Color(0xFF2196F3),
                                       borderRadius: BorderRadius.circular(999),
                                     ),
                                     child: Text(
@@ -285,6 +303,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                       style: const TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
+                                        color: Colors.white,
                                       ),
                                     ),
                                   ),
@@ -299,7 +318,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         children: [
                           const Text(
                             'Availability',
-                            style: TextStyle(fontSize: 13),
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.black54,
+                            ),
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -307,7 +329,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             style: TextStyle(
                               fontSize: 14,
                               color: product.stock > 0
-                                  ? Colors.white.withValues(alpha: 0.8)
+                                  ? const Color(
+                                      0xFF1A237E,
+                                    ).withValues(alpha: 0.8)
                                   : Colors.redAccent,
                             ),
                           ),
@@ -325,9 +349,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         ),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(16),
-                          color: Colors.white.withValues(alpha: 0.04),
+                          color: Colors.blue.withValues(alpha: 0.03),
                           border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.12),
+                            color: Colors.blue.withValues(alpha: 0.1),
                           ),
                         ),
                         child: Row(
@@ -335,6 +359,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           children: [
                             IconButton(
                               iconSize: 20,
+                              color: const Color(0xFF1A237E),
                               onPressed: () {
                                 setState(() {
                                   if (_quantity > 1) {
@@ -353,11 +378,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
+                                  color: Color(0xFF1A237E),
                                 ),
                               ),
                             ),
                             IconButton(
                               iconSize: 20,
+                              color: const Color(0xFF1A237E),
                               onPressed: product.stock > 0
                                   ? () {
                                       if (_quantity < product.stock) {
@@ -466,8 +493,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                               overflow: TextOverflow.ellipsis,
                                               style: TextStyle(
                                                 fontSize: 11,
-                                                color: Colors.white.withValues(
-                                                  alpha: 0.7,
+                                                color: Colors.black.withValues(
+                                                  alpha: 0.5,
                                                 ),
                                               ),
                                             ),
@@ -506,20 +533,18 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                                     ),
                                                   ),
                                                   const SizedBox(width: 6),
-                                                  if (base != null)
-                                                    Text(
-                                                      '₹${base.toStringAsFixed(2)}',
-                                                      style: TextStyle(
-                                                        fontSize: 12,
-                                                        decoration:
-                                                            TextDecoration
-                                                                .lineThrough,
-                                                        color: Colors.white
-                                                            .withValues(
-                                                              alpha: 0.6,
-                                                            ),
-                                                      ),
+                                                  Text(
+                                                    '₹${base.toStringAsFixed(2)}',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      decoration: TextDecoration
+                                                          .lineThrough,
+                                                      color: Colors.white
+                                                          .withValues(
+                                                            alpha: 0.6,
+                                                          ),
                                                     ),
+                                                  ),
                                                   if (itemDiscountPercent !=
                                                       null) ...[
                                                     const SizedBox(width: 4),
